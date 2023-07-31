@@ -19,7 +19,7 @@ struct CommonParams
 struct DataWB_FFT
 {
 	static constexpr auto LENGTH = 10240;
-	CommonParams params;
+	CommonParams Params;
 	unsigned short Data[LENGTH];
 	unsigned char Reserved[48];
 };

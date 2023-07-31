@@ -81,34 +81,30 @@ long long DBXXH::timeConvert(unsigned long long t)
 
 void DBXXH::DataDealCX(TcpSocket& socket)
 {
-    auto ToFixedCXdata = [&](const DataWB_FFT& recvData)
+    auto ToPowerWB = [&](const DataWB_FFT& recvData)
     {
-        //auto& FixedCXResult = g_Parameter.m_ParamPowerWB;
-        //const auto CXPerDataLen = sizeof(long long) + (sizeof(char) + sizeof(short)) * FixedCXResult.DataPoint,
-        //    CXDataLen = FixedCXResult.CXGroupNum * CXPerDataLen,
-        //    Datalen = sizeof(DataHead) + sizeof(ParamPowerWB) + CXDataLen + sizeof(DataEnd);
-        //auto res = std::make_unique<StructNetData>(0, Datalen);
+        auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
+        const auto PerDataLen = sizeof(char) * ParamPowerWB.DataPoint,
+            DataLen = PerDataLen,
+            Datalen = sizeof(DataHead) + sizeof(ParamPowerWB) + DataLen + sizeof(DataEnd);
+        auto res = std::make_unique<StructNetData>(0, Datalen);
 
-        //const auto LENGTH = FixedCXResult.DataPoint - 1;
-        //auto Data = recvData.DirectionRangeData;
-        //auto start = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
-        //for (auto g = 0; g < FixedCXResult.CXGroupNum; ++g)
+        const auto LENGTH = ParamPowerWB.DataPoint - 1;
+        auto Data = recvData.Data;
+        auto start = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
+        //for (auto g = 0; g < ParamPowerWB.CXGroupNum; ++g)
         //{
-        //    auto& StartTime = *(long long*)start;
-        //    auto Range = start + sizeof(long long);
-        //    auto Direction = (short*)(Range + sizeof(char) * FixedCXResult.DataPoint);
-        //    StartTime = timeConvert(*(long long*)recvData.Time);
-        //    for (int p = 0; p < LENGTH; ++p)
-        //    {
-        //        Range[p] = std::max(Data[p].Range / 100 + 12, 0);
-        //        //Range[p] = Data[p].Range / 100 - 125;
-        //        Direction[p] = BASE_DIRECTION - (Data[p].Direction - 750);
-        //    }
-        //    Range[LENGTH] = Range[LENGTH - 1];
-        //    Direction[LENGTH] = Direction[LENGTH - 1];
+            auto& StartTime = *(long long*)start;
+            auto Range = start + sizeof(long long);
+            for (int p = 0; p < LENGTH; ++p)
+            {
+                Range[p] = std::max(Data[p] / 100 + 12, 0);
+                //Range[p] = Data[p].Range / 100 - 125;
+            }
+            Range[LENGTH] = Range[LENGTH - 1];
         //    start += CXPerDataLen;
         //}
-        //socket.PowerWBDataReplay(FixedCXResult, res, Datalen, recvData.PackNum);
+        socket.PowerWBDataReplay(ParamPowerWB, res, Datalen, 0);
     };
 
     auto GetQueueDataFun = [&](const DataWB_FFT& recvData)
@@ -117,11 +113,11 @@ void DBXXH::DataDealCX(TcpSocket& socket)
         {
         case 1: //WB
         {
-            auto& FixedCXResult = g_Parameter.m_ParamPowerWB;
+            auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
             std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);
-            //if (recvData.DataType != 0 || FixedCXResult.FreqResolution != ResolveResolution(recvData.Resolution))
-            //    return;
-            //ToFixedCXdata(recvData);
+            if (recvData.Params.DataType != 3 /*|| ParamPowerWB.Resolution != ResolveResolution(recvData.Params.Resolution)*/)
+                return;
+            ToPowerWB(recvData);
             break;
         }
         default:

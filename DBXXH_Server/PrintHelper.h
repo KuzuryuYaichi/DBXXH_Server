@@ -68,14 +68,14 @@ namespace DBXXH
 
         std::mutex ParamPowerWBMutex;
         ParamPowerWB m_ParamPowerWB;
-        void SetFixedCXResult(unsigned int Task, long long CenterFreq)
+        void SetParamPowerWB(unsigned int Task, long long CenterFreq)
         {
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
             //m_ParamPowerWB.Task = Task;
             //m_ParamPowerWB.CenterFreq = CenterFreq;
 
         }
-        void SetFixedCXResult(unsigned int Task, unsigned int Resolution)
+        void SetParamPowerWB(unsigned int Task, unsigned int Resolution)
         {
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
             switch (Resolution)

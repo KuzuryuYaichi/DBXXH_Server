@@ -682,7 +682,7 @@ void DBXXH::TcpSession::SetCmdWBData(const std::vector<std::string>& Cmd)
         CmdCX.CorrectMode = 0;
         CmdCX.SendCXCmd();
         g_Parameter.SetCmd(CenterFreq, CenterFreq);
-        g_Parameter.SetFixedCXResult(TaskValue, CenterFreq);
+        g_Parameter.SetParamPowerWB(TaskValue, CenterFreq);
         StartRevDataWork();
         std::cout << "Type: Fixed WB CX, Val: Start Gather, State: Gathering" << std::endl;
         SetAppConfig();

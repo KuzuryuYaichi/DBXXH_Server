@@ -5,7 +5,6 @@
 #include "StructDatas.h"
 #include "DataThread.h"
 #include "PrintHelper.h"
-#include <numbers>
 
 extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataWB_FFT>>> tsqueueCXs;
 

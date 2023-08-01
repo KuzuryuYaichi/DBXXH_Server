@@ -91,20 +91,20 @@ namespace DBXXH
         }
 
         std::mutex NBWaveMutex;
-        StructNBWaveZCResult NBWaveZCResult[ZC_CH_NUM];
+        StructNBWaveZCResult m_NBWaveZCResult[ZC_CH_NUM];
         void SetNBWaveResultFrequency(int ChNum, unsigned long long Frequency)
         {
             if (ChNum < 0 || ChNum >= ZC_CH_NUM)
                 return;
             std::lock_guard<std::mutex> lock(NBWaveMutex);
-            NBWaveZCResult[ChNum].SetNBWaveResultFrequency(Frequency);
+            m_NBWaveZCResult[ChNum].SetNBWaveResultFrequency(Frequency);
         }
         void SetNBWaveResultBandWidth(int ChNum, unsigned int BandWidth)
         {
             if (ChNum < 0 || ChNum >= ZC_CH_NUM)
                 return;
             std::lock_guard<std::mutex> lock(NBWaveMutex);
-            NBWaveZCResult[ChNum].SetNBWaveResultBandWidth(BandWidth);
+            m_NBWaveZCResult[ChNum].SetNBWaveResultBandWidth(BandWidth);
         }
 
         char isTestingInner = CALC_MASK();

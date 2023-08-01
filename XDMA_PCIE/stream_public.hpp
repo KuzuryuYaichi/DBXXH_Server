@@ -59,7 +59,7 @@ void ReadThread(xdma_device& dev, P_CXDATA_CALLBACK& CallBackCX, P_ZCDATA_CALLBA
         while (isRunning)
         {
             size_t bytes_remaining = BLOCK_LEN;
-            auto ptr = std::make_unique<Struct_Datas<DataWB_FFT>>(PACK_NUM);
+            auto ptr = std::make_unique<Struct_Datas<DataNB_DDC>>(PACK_NUM);
             auto buffer = (char*)ptr->ptr;
             try
             {

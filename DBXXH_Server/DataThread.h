@@ -6,7 +6,7 @@
 namespace DBXXH
 {
 	void DataDealCX(TcpSocket&);
-	//void DataDealZC(TcpSocket&);
+	void DataDealZC(TcpSocket&);
 	float ResolveResolution(unsigned char);
     long long timeConvert(unsigned long long);
 }

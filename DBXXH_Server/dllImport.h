@@ -5,6 +5,6 @@
 
 void Q_DECL_STDCALL DataCX(std::unique_ptr<Struct_Datas<DataWB_FFT>>&);
 
-void Q_DECL_STDCALL DataZC(std::unique_ptr<Struct_Datas<DataWB_FFT>>&);
+void Q_DECL_STDCALL DataZC(std::unique_ptr<Struct_Datas<DataNB_DDC>>&);
 
 #endif

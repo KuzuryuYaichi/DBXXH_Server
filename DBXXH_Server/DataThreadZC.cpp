@@ -3,6 +3,10 @@
 #include "ThreadSafeQueue.h"
 #include "StructData.h"
 #include "StructDatas.h"
+#include "DataThread.h"
+#include "PrintHelper.h"
+
+extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataNB_DDC>>> tsqueueZCs;
 
 void DBXXH::TcpSocket::NBZCDataReplay(const StructNBWaveZCResult& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned char Channel)
 {
@@ -12,49 +16,49 @@ void DBXXH::TcpSocket::NBZCDataReplay(const StructNBWaveZCResult& ReplayParm, co
     SendMsg(res);
 }
 
-//void DataDealZC(TcpSocket& socket)
-//{
-//    auto ToWaveData = [&](const StructDataZC& recvData)
-//    {
-//        static constexpr auto MAX_CHANNEL = 16;
-//        static unsigned char PackIndexAll[MAX_CHANNEL] = { 0 };
-//        static std::unique_ptr<StructNetData> resAll[MAX_CHANNEL] = { nullptr };
-//
-//        if (recvData.ChannelNo < 0 || recvData.ChannelNo >= MAX_CHANNEL)
-//            return;
-//        auto& PackIndex = PackIndexAll[recvData.ChannelNo];
-//        auto& res = resAll[recvData.ChannelNo];
-//        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + 4 * sizeof(StructDataZC::DDCData) + sizeof(DataEnd);
-//
-//        if (PackIndex == 0 || res == nullptr)
-//        {
-//            res = std::make_unique<StructNetData>(0, DataLen);
-//        }
-//
-//        auto& NBWaveCXResult = g_Parameter.NBWaveZCResult[recvData.ChannelNo];
-//        const auto LENGTH = recvData.LENGTH;
-//        auto Data = recvData.DDCData;
-//        const auto DataBase = (NarrowDDC*)(res->data + sizeof(DataHead) + sizeof(StructNBWaveZCResult) + PackIndex * sizeof(StructDataZC::DDCData));
-//
-//        for (int p = 0; p < LENGTH; ++p)
-//        {
-//            DataBase[p] = Data[p];
-//        }
-//
-//        if (++PackIndex == 4)
-//        {
-//            socket.NBZCDataReplay(NBWaveCXResult, res, DataLen, recvData.ChannelNo);
-//            PackIndex = 0;
-//        }
-//    };
-//
-//    while (true)
-//    {
-//        auto ptr = tsqueueZCs.wait_and_pop();
-//        for (int i = 0; i < ptr->PACK_NUM; ++i)
-//        {
-//            if (ptr->ptr[i].Head == 0xA1FA)
-//                ToWaveData(ptr->ptr[i]);
-//        }
-//    }
-//};
+void DBXXH::DataDealZC(TcpSocket& socket)
+{
+    auto ToWaveData = [&](const DataNB_DDC& recvData)
+    {
+        static constexpr auto MAX_CHANNEL = 8;
+        static unsigned char PackIndexAll[MAX_CHANNEL] = { 0 };
+        static std::unique_ptr<StructNetData> resAll[MAX_CHANNEL] = { nullptr };
+
+        if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= MAX_CHANNEL)
+            return;
+        auto& PackIndex = PackIndexAll[recvData.Params.ChNum];
+        auto& res = resAll[recvData.Params.ChNum];
+        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + 4 * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
+
+        if (PackIndex == 0 || res == nullptr)
+        {
+            res = std::make_unique<StructNetData>(0, DataLen);
+        }
+
+        auto& NBWaveCXResult = g_Parameter.m_NBWaveZCResult[recvData.Params.ChNum];
+        const auto LENGTH = recvData.LENGTH;
+        auto Data = recvData.DDCData;
+        const auto DataBase = (DDC*)(res->data + sizeof(DataHead) + sizeof(StructNBWaveZCResult) + PackIndex * sizeof(DataNB_DDC::DDCData));
+
+        for (int p = 0; p < LENGTH; ++p)
+        {
+            DataBase[p] = Data[p];
+        }
+
+        if (++PackIndex == 4)
+        {
+            socket.NBZCDataReplay(NBWaveCXResult, res, DataLen, recvData.Params.ChNum);
+            PackIndex = 0;
+        }
+    };
+
+    while (true)
+    {
+        auto ptr = tsqueueZCs.wait_and_pop();
+        for (int i = 0; i < ptr->PACK_NUM; ++i)
+        {
+            if (ptr->ptr[i].Params.Head == 0xABCD1234)
+                ToWaveData(ptr->ptr[i]);
+        }
+    }
+};

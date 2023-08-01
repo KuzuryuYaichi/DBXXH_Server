@@ -33,7 +33,7 @@ struct DDC
 struct DataNB_DDC
 {
 	static constexpr auto LENGTH = 256;
-	CommonParams params;
+	CommonParams Params;
 	DDC DDCData[LENGTH];
 };
 

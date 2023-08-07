@@ -202,7 +202,7 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
     short TypeValue = std::stoul(Cmd[2].substr(sizeof("Type")), 0, 16);
     switch (TypeValue)
     {
-    case 0x0201:
+    case 0x0101:
     {
         if (Cmd[3].find_first_of("Scheck:") == 0)
         {
@@ -212,7 +212,7 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
         }
         break;
     }
-    case 0x0202:
+    case 0x0102:
     {
         if (Cmd[3].find_first_of("WorkCtrl:") == 0)
         {
@@ -253,14 +253,16 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
         }
         break;
     }
-    case 0x0203:
+    case 0x0103:
     {
-        bool ControlState = SetCmdCXParm(Cmd);
+        bool ControlState = SetCmdWBParams(Cmd);
         if (ControlState)
         {
             std::cout << "Type: WorkParam Set, Val: CX Param Set, State: Setting" << std::endl;
-            CmdCX.SendCXCmd();
-            //g_Parameter.SetFixedCXResult(TaskValue, (unsigned int)CmdCX.Resolution);
+            CmdWB.SendCXCmd();
+            //g_Parameter.SetFixedCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
+            //g_Parameter.SetSweepCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
+            //g_Parameter.SetTestCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
             ControlReplay(TaskValue, 1, 0);
             ReplayCommand.Task = TaskValue;
             WorkParmReplay(ReplayCommand);
@@ -270,42 +272,6 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
         else
         {
             ControlReplay(TaskValue, 0, 0);
-        }
-        break;
-    }
-    case 0x0204: // Sweep
-    {
-        if (Cmd[4].find_first_of("SFreq:") == 0)
-        {
-            SetCmdSweepData(Cmd);
-            g_Parameter.DataType = PARAMETER_SET::CX_SWEEP;
-        }
-        break;
-    }
-    case 0x0205: // NarrowBand
-    {
-        if (Cmd[4].find_first_of("DFreq:") == 0)
-        {
-            SetCmdNBData(Cmd);
-            g_Parameter.DataType = PARAMETER_SET::CX_NB;
-        }
-        break;
-    }
-    case 0x0206: // WideBand
-    {
-        if (Cmd[4].find_first_of("CFreq:") == 0)
-        {
-            SetCmdWBData(Cmd);
-            g_Parameter.DataType = PARAMETER_SET::CX_WB;
-        }
-        break;
-    }
-    case 0x0207: // Test Data
-    {
-        if (Cmd[4].find_first_of("CFreq:") == 0)
-        {
-            SetCmdTestData(Cmd);
-            g_Parameter.DataType = PARAMETER_SET::TEST_CHANNEL;
         }
         break;
     }
@@ -330,89 +296,10 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
 
 void DBXXH::TcpSession::SelfCheck()
 {
-    std::thread([this]()
-    {
-        for (int i = 0; i < PARAMETER_SET::CX_CH_NUM; ++i)
-        {
-            g_Parameter.SelfTestInner[i] = g_Parameter.SelfTestOuter[i] = false;
-        }
 
-        CmdCX.StateMachine = 3;
-        CmdCX.Resolution = 13;
-        CmdCX.RFAttenuation = 30;
-        CmdCX.MFAttenuation = 0;
-        CmdCX.StartCenterFreq = CmdCX.StopCenterFreq = CENTER_FREQ_KHZ;
-        CmdCX.CorrectMode = 0;
-        CmdCX.SendCXCmd();
-        //g_Parameter.SetTestCXResult(TaskValue, CENTER_FREQ_HZ, CmdCX.Resolution);
-        auto DataType = g_Parameter.DataType;
-        g_Parameter.DataType = PARAMETER_SET::TEST_CHANNEL;
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        g_Parameter.isTestingInner = 0;
-        while (g_Parameter.isTestingInner != PARAMETER_SET::CALC_MASK());
-        CmdCX.RFAttenuation = 10;
-        CmdCX.MFAttenuation = 0;
-        CmdCX.CorrectMode = 1;
-        CmdCX.SendCXCmd();
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        g_Parameter.isTestingOuter = 0;
-        while (g_Parameter.isTestingOuter != PARAMETER_SET::CALC_MASK());
-
-        std::string TestResStr;
-        ReplayScheck.Task = TaskValue;
-        ReplayScheck.DeviveChNum = 4;
-        ReplayScheck.ScheckResult = ~0;
-
-        TestResStr += "Correct: \r\n";
-        for (int i = 0; i < PARAMETER_SET::CX_CH_NUM; ++i)
-        {
-            if (g_Parameter.SelfTestInner[i])
-            {
-                ReplayScheck.ScheckResult &= ~0xC0000000;
-                TestResStr += "Check Success";
-                break;
-            }
-        }
-        TestResStr += "\r\n\r\nPDU Check: ";
-        TestResStr += (ReplayScheck.ScheckResult & ((long long)1 << 63)) ? "Success " : "Failed "; //Correct Status
-        TestResStr += "\r\n\r\nRF: \r\n";
-        for (int i = 0; i < PARAMETER_SET::CX_CH_NUM; ++i)
-        {
-            if (g_Parameter.SelfTestInner[i])
-            {
-                ReplayScheck.ScheckResult &= ~(1 << i);
-            }
-            TestResStr += std::to_string(i + 1) + "Channel Check: " + (g_Parameter.SelfTestInner[i] ? "Success " : "Failed ");
-        }
-        ReplayScheck.AGroupNum = 1;
-        ReplayScheck.AScheckResult = ~0;
-        TestResStr += "\r\n\r\nAntenna: \r\n";
-        for (int i = 0; i < PARAMETER_SET::CX_CH_NUM; ++i)
-        {
-            if (g_Parameter.SelfTestOuter[i])
-            {
-                ReplayScheck.AScheckResult &= ~(1 << i);
-            }
-            TestResStr += std::to_string(i + 1) + "Channel Check: " + (g_Parameter.SelfTestOuter[i] ? "Success " : "Failed ");
-        }
-
-        ScheckReplay(ReplayScheck);
-        std::cout << "State: SelfCheck Finished" << std::endl;
-
-        CmdCX.Resolution = g_Parameter.Resolution;
-        CmdCX.StartCenterFreq = g_Parameter.StartCenterFreq / 1e3;
-        CmdCX.StopCenterFreq = g_Parameter.StopCenterFreq / 1e3;
-        CmdCX.RFAttenuation = g_Parameter.RFAttenuation;
-        CmdCX.RFAttenuation = g_Parameter.MFAttenuation;
-        CmdCX.Smooth = g_Parameter.Smooth;
-        CmdCX.RfMode = g_Parameter.RfMode;
-        CmdCX.StateMachine = 1;
-        CmdCX.SendCXCmd();
-        g_Parameter.DataType = DataType;
-    }).detach();
 }
 
-bool DBXXH::TcpSession::SetCmdCXParm(const std::vector<std::string>& Cmd)
+bool DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
 {
     bool res = true;
     for (size_t n = Cmd.size(), i = 3; i < n; ++i)
@@ -420,419 +307,77 @@ bool DBXXH::TcpSession::SetCmdCXParm(const std::vector<std::string>& Cmd)
         auto index = Cmd[i].find_first_of(':');
         if (index >= 0)
         {
-            auto ParmName = Cmd[i].substr(0, index);
-            if (ParmName == "Data")
-            {
-                switch (std::stoi(Cmd[i].substr(sizeof("Data"))))
-                {
-                case 0: ReplayCommand.Data = 0; break;
-                case 1: ReplayCommand.Data = 1; break;
-                default: res = false;
-                }
-                std::cout << "DataType: Ampl Freq Data" << std::endl;
-            }
-            else if (ParmName == "Detect")
-            {
-                switch (std::stoi(Cmd[i].substr(sizeof("Detect"))))
-                {
-                case 0: break;
-                case 1: break;
-                default: res = false;
-                }
-                ReplayCommand.Detect = 0;
-                std::cout << "SignalSort: FrontBand Not Deal" << std::endl;
-            }
-            else if (ParmName == "FreqRes")
+            auto ParamName = Cmd[i].substr(0, index);
+            if (ParamName == "FreqRes")
             {
                 float FreqResValue = std::stof(Cmd[i].substr(sizeof("FreqRes")));
                 if (FreqResValue == 25.0)
-                    g_Parameter.Resolution = CmdCX.Resolution = 10;
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 10;
                 else if (FreqResValue == 12.5)
-                    g_Parameter.Resolution = CmdCX.Resolution = 11;
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 11;
                 else if (FreqResValue == 6.25)
-                    g_Parameter.Resolution = CmdCX.Resolution = 12;
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 12;
                 else if (FreqResValue == 3.125)
-                    g_Parameter.Resolution = CmdCX.Resolution = 13;
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 13;
                 else
                     res = false;
                 std::cout << "FreqResolution: " << FreqResValue << std::endl;
                 ReplayCommand.FreqRes = FreqResValue;
             }
-            else if (ParmName == "SimBW")
+            else if (ParamName == "SimBW")
             {
-                auto simBW = std::stoi(Cmd[i].substr(sizeof("SimBW"))); //SimulatonBandWidth  "KHz"
+                auto simBW = std::stoi(Cmd[i].substr(sizeof("SimBW")));
                 if (simBW != BAND_WIDTH_KHZ)
                     res = false;
                 std::cout << "SimulateBandwidth: " << simBW << std::endl;
                 ReplayCommand.SimBW = simBW;
             }
-            else if (ParmName == "GMode")
-            {
-                auto GModeValue = std::stoi(Cmd[i].substr(sizeof("GMode")));
-                if (GModeValue >= 0 && GModeValue <= 3)
-                {
-                    ReplayCommand.GMode = GModeValue;
-                    if (i + 1 < n && Cmd[i + 1].find_first_of("MGC:") == 0)
-                    {
-                        ReplayCommand.MGC = std::stoi(Cmd[++i].substr(sizeof("MGC")));//MGC
-                    }
-                    switch (GModeValue)
-                    {
-                    case 0:
-                    {
-                        auto MGCvalue = ReplayCommand.MGC;
-                        if (MGCvalue >= 0 && MGCvalue <= 60)
-                        {
-                            std::cout << "GainType: MGC, GainValue: " << MGCvalue << std::endl;
-                            if (MGCvalue < 30)
-                            {
-                                CmdCX.RFAttenuation = g_Parameter.RFAttenuation = MGCvalue;
-                                CmdCX.MFAttenuation = g_Parameter.MFAttenuation = 0;
-                            }
-                            else
-                            {
-                                CmdCX.RFAttenuation = g_Parameter.RFAttenuation = 30;
-                                CmdCX.MFAttenuation = g_Parameter.MFAttenuation = MGCvalue - 30;
-                            }
-                        }
-                        else
-                            res = false;
-                        break;
-                    }
-                    case 1:
-                    {
-                        auto AGCvalue = ReplayCommand.AGC; //AGC
-                        switch (AGCvalue)
-                        {
-                        case 0: break;
-                        case 1: break;
-                        case 2: break;
-                        case 3: break;
-                        case 4: break;
-                        default: res = false;
-                        }
-                        std::cout << "GainType: AGC, GainValue: NULL" << std::endl;
-                        break;
-                    }
-                    default: res = false;
-                    }
-                }
-                else
-                    res = false;
-            }
-            else if (ParmName == "SmNum")
+            else if (ParamName == "SmNum")
             {
                 auto SmNumValue = std::stoi(Cmd[i].substr(sizeof("SmNum")));
                 switch (SmNumValue)
                 {
-                case 1:  g_Parameter.Smooth = CmdCX.Smooth = 1; break;
-                case 2:  g_Parameter.Smooth = CmdCX.Smooth = 2; break;
-                case 4:  g_Parameter.Smooth = CmdCX.Smooth = 4; break;
-                case 8:  g_Parameter.Smooth = CmdCX.Smooth = 8; break;
-                case 16: g_Parameter.Smooth = CmdCX.Smooth = 16; break;
-                case 32: g_Parameter.Smooth = CmdCX.Smooth = 32; break;
+                case 1:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 1; break;
+                case 2:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 2; break;
+                case 4:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 4; break;
+                case 8:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 8; break;
+                case 16: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 16; break;
+                case 32: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 32; break;
                 default: res = false;
                 }
-                std::cout << "SmoothTime: " << CmdCX.Smooth;
-
-                ReplayCommand.SmNum = CmdCX.Smooth;
-                auto SmModeValue = std::stoi(Cmd[++i].substr(sizeof("SmMode")));
-                switch (SmModeValue)
-                {
-                case 0: std::cout << ", SmoothMode: Average" << std::endl; break;
-                case 1: res = false; break;
-                case 2: res = false; break;
-                case 3: res = false; break;
-                case 4: res = false; break;
-                default: res = false; break;
-                }
-                ReplayCommand.SmMode = SmModeValue;
+                std::cout << "SmoothTime: " << CmdWB.Context.FFT_Param.Smooth;
+                ReplayCommand.SmNum = CmdWB.Context.FFT_Param.Smooth;
             }
-            else if (ParmName == "LmMode")
+            else if (ParamName == "WinType")
             {
-                auto LmModeValue = std::stoi(Cmd[i].substr(sizeof("LmMode"))),
-                    LmValValue = std::stoi(Cmd[++i].substr(sizeof("LmVal")));
-                switch (LmModeValue)
+                auto WinType = std::stoi(Cmd[i].substr(sizeof("WinType")));
+                switch (WinType)
                 {
-                case 0:
-                {
-                    if (LmValValue >= 0 && LmValValue <= 50)
-                    {
-                        std::cout << "LimitedMode: Auto, LimitedValue: " << LmValValue << std::endl;
-                    }
-                    else
-                    {
-                        res = false;
-                    }
-                    break;
+                case 0:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 0; break;
+                case 1:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 1; break;
+                case 2:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 2; break;
+                case 3:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 3; break;
+                case 4:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 4; break;
+                default: res = false;
                 }
-                case 1:
-                {
-                    if (LmValValue <= 0 && LmValValue >= -160)
-                    {
-                        std::cout << "LimitedMode: Manual, LimitedValue: " << LmValValue << std::endl;
-                    }
-                    else
-                    {
-                        res = false;
-                    }
-                    break;
-                }
-                default: res = false; break;
-                }
-                ReplayCommand.LmMode = LmModeValue;
-                ReplayCommand.LmVal = LmValValue;
+                std::cout << "SmoothTime: " << CmdWB.Context.FFT_Param.Smooth;
+                ReplayCommand.SmNum = CmdWB.Context.FFT_Param.Smooth;
             }
-            else if (ParmName == "RcvMode")
-            {
-                auto RcvModeValue = std::stoi(Cmd[i].substr(sizeof("RcvMode")));
-                switch (RcvModeValue)
-                {
-                case 0: CmdCX.RfMode = 1; std::cout << "WorkMode: Normal Mode" << std::endl; break;
-                case 1: res = false; break;
-                case 2: CmdCX.RfMode = 2; std::cout << "WorkMode: Low Noise Mode" << std::endl; break;
-                default: res = false; break;
-                }
-                ReplayCommand.RcvMode = RcvModeValue;
-            }
+            //else if (ParmName == "RcvMode")
+            //{
+            //    auto RcvModeValue = std::stoi(Cmd[i].substr(sizeof("RcvMode")));
+            //    switch (RcvModeValue)
+            //    {
+            //    case 0: CmdWB.RfMode = 1; std::cout << "WorkMode: Normal Mode" << std::endl; break;
+            //    case 1: res = false; break;
+            //    case 2: CmdWB.RfMode = 2; std::cout << "WorkMode: Low Noise Mode" << std::endl; break;
+            //    default: res = false; break;
+            //    }
+            //    ReplayCommand.RcvMode = RcvModeValue;
+            //}
         }
     }
     return res;
-}
-
-void DBXXH::TcpSession::SetCmdNBData(const std::vector<std::string>& Cmd)
-{
-    unsigned int BWvalue = 80000, ActValue = 3;
-    long long CenterFreq = 0;
-    short DFMethod = 6, FNumber = 20;
-    for (size_t n = Cmd.size(), i = 3; i < n; ++i)
-    {
-        auto index = Cmd[i].find_first_of(':');
-        if (index >= 0)
-        {
-            auto ParmName = Cmd[i].substr(0, index);
-            if (ParmName == "Act")
-                ActValue = std::stol(Cmd[i].substr(sizeof("Act")));
-            else if (ParmName == "DFreq")
-                CenterFreq = std::stoll(Cmd[i].substr(sizeof("DFreq")));
-            else if (ParmName == "BW")
-                BWvalue = std::stoul(Cmd[i].substr(sizeof("BW"))) / 1e3;
-            else if (ParmName == "DFMethod")
-                DFMethod = std::stoul(Cmd[i].substr(sizeof("DFMethod")));
-            else if (ParmName == "FNumber")
-                FNumber = std::stoul(Cmd[i].substr(sizeof("FNumber")));
-        }
-    }
-
-    if (ActValue == 1 && CenterFreq >= MIN_FREQ_HZ && CenterFreq <= MAX_FREQ_HZ)
-    {
-        ControlReplay(TaskValue, 1, 0);
-        CmdCX.StartCenterFreq = CmdCX.StopCenterFreq = CenterFreq / 1e3;
-        std::cout << "CenterFreq: " << CenterFreq << std::endl;
-        CmdCX.StateMachine = 0;
-        CmdCX.SendCXCmd();
-        g_Parameter.SetCmd(CenterFreq, CenterFreq);
-        StartRevDataWork();
-        std::cout << "Type: Fixed NB CX, Val: Start Gather, State: Gathering" << std::endl;
-        SetAppConfig();
-    }
-    else if (ActValue == 2)
-    {
-        ControlReplay(TaskValue, 1, 0);
-        StopRevDataWork();
-        std::cout << "Type: Fixed NB CX, Val: Stop Gather, State: Stopped" << std::endl;
-    }
-    else
-    {
-        ControlReplay(TaskValue, 0, 0);
-    }
-}
-
-void DBXXH::TcpSession::SetCmdWBData(const std::vector<std::string>& Cmd)
-{
-    unsigned int ActValue = 3;
-    long long CenterFreq = 0;
-    for (size_t n = Cmd.size(), i = 3; i < n; i++)
-    {
-        auto index = Cmd[i].find_first_of(':');
-        if (index >= 0)
-        {
-            auto ParmName = Cmd[i].substr(0, index);
-            if (ParmName == "Act")
-                ActValue = std::stol(Cmd[i].substr(sizeof("Act")));
-            else if (ParmName == "CFreq")
-                CenterFreq = std::stoll(Cmd[i].substr(sizeof("CFreq")));
-        }
-    }
-
-    if (ActValue == 1 && CenterFreq >= MIN_FREQ_HZ && CenterFreq <= MAX_FREQ_HZ)
-    {
-        ControlReplay(TaskValue, 1, 0);
-        CmdCX.StartCenterFreq = CmdCX.StopCenterFreq = CenterFreq / 1e3;
-        std::cout << "CenterFreq: " << CenterFreq << std::endl;
-        CmdCX.StateMachine = 1;
-        CmdCX.RFAttenuation = 10;
-        CmdCX.MFAttenuation = 0;
-        CmdCX.CorrectMode = 1;
-        CmdCX.SendCXCmd();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10 * g_Parameter.Smooth));
-
-        CmdCX.RFAttenuation = g_Parameter.RFAttenuation;
-        CmdCX.MFAttenuation = g_Parameter.MFAttenuation;
-        CmdCX.CorrectMode = 0;
-        CmdCX.SendCXCmd();
-        g_Parameter.SetCmd(CenterFreq, CenterFreq);
-        g_Parameter.SetParamPowerWB(TaskValue, CenterFreq);
-        StartRevDataWork();
-        std::cout << "Type: Fixed WB CX, Val: Start Gather, State: Gathering" << std::endl;
-        SetAppConfig();
-    }
-    else if (ActValue == 2)
-    {
-        ControlReplay(TaskValue, 1, 0);
-        StopRevDataWork();
-        std::cout << "Type: Fixed WB CX, Val: Stop Gather, State: Stopped" << std::endl;
-    }
-    else
-    {
-        ControlReplay(TaskValue, 0, 0);
-    }
-}
-
-void DBXXH::TcpSession::SetCmdSweepData(const std::vector<std::string>& Cmd)
-{
-    unsigned int ActValue = 3;
-    long long StartFreq = 0, StopFreq = 0;
-    for (size_t n = Cmd.size(), i = 3; i < n; ++i)
-    {
-        auto index = Cmd[i].find_first_of(':');
-        if (index >= 0)
-        {
-            auto ParmName = Cmd[i].substr(0, index);
-            if (ParmName == "Act")
-                ActValue = std::stol(Cmd[i].substr(sizeof("Act")));
-            else if (ParmName == "SFreq")
-                StartFreq = std::stoll(Cmd[i].substr(sizeof("SFreq")));
-            else if (ParmName == "EFreq")
-                StopFreq = std::stoll(Cmd[i].substr(sizeof("EFreq")));
-        }
-    }
-
-    auto SetFreqCmd = [&]()
-    {
-        long long StartCenterFreq = 0, StopCenterFreq = 0;
-        if (StartFreq == StopFreq)
-        {
-            StartCenterFreq = StartFreq;
-            StopCenterFreq = StopFreq;
-        }
-        else
-        {
-            StartCenterFreq = MIN_FREQ_HZ;
-            StopCenterFreq = MAX_FREQ_HZ;
-            for (StartCenterFreq = MIN_FREQ_HZ; StartCenterFreq + HALF_BAND_WIDTH_HZ < StartFreq && StartCenterFreq < MAX_FREQ_HZ; StartCenterFreq += BAND_WIDTH_HZ);
-            for (StopCenterFreq = MAX_FREQ_HZ; StopCenterFreq - HALF_BAND_WIDTH_HZ > StopFreq && StopCenterFreq > MIN_FREQ_HZ; StopCenterFreq -= BAND_WIDTH_HZ);
-        }
-        if (StartCenterFreq < MIN_FREQ_KHZ)
-            StartCenterFreq = MIN_FREQ_KHZ;
-        if (StopCenterFreq > MAX_FREQ_KHZ)
-            StopCenterFreq = MAX_FREQ_KHZ;
-
-        CmdCX.StartCenterFreq = StartCenterFreq / 1e3;
-        CmdCX.StopCenterFreq = StopCenterFreq / 1e3;
-        std::cout << "StartFreq: " << StartCenterFreq << " StopFreq: " << StopCenterFreq << std::endl;
-        CmdCX.StateMachine = 1;
-        CmdCX.RFAttenuation = 10;
-        CmdCX.MFAttenuation = 0;
-        CmdCX.CorrectMode = 1;
-        CmdCX.SendCXCmd();
-        std::this_thread::sleep_for(std::chrono::milliseconds(160 * g_Parameter.Smooth));
-
-        CmdCX.RFAttenuation = g_Parameter.RFAttenuation;
-        CmdCX.MFAttenuation = g_Parameter.MFAttenuation;
-        CmdCX.CorrectMode = 0;
-        CmdCX.SendCXCmd();
-        g_Parameter.SetCmd(CmdCX.StartCenterFreq, CmdCX.StopCenterFreq);
-        //g_Parameter.SetSweepCXResult(TaskValue, StartCenterFreq, StopCenterFreq);
-    };
-
-    if (ActValue == 1 && StartFreq <= StopFreq)
-    {
-        ControlReplay(TaskValue, 1, 0);
-        SetFreqCmd();
-        StartRevDataWork();
-        std::cout << "Type: BandScan, Val: Start Scan, State: Scanning" << std::endl;
-        SetAppConfig();
-    }
-    else if (ActValue == 2)
-    {
-        ControlReplay(TaskValue, 1, 0);
-        StopRevDataWork();
-        std::cout << "Type: BandScan, Val: Stop Scan, State: Stopped" << std::endl;
-    }
-    else
-    {
-        ControlReplay(TaskValue, 0, 0);
-    }
-}
-
-void DBXXH::TcpSession::SetCmdTestData(const std::vector<std::string>& Cmd)
-{
-    unsigned int ActValue = 3, mode = 0, scope = 0;
-    long long CenterFreq = 0;
-    for (size_t n = Cmd.size(), i = 3; i < n; ++i)
-    {
-        auto index = Cmd[i].find_first_of(':');
-        if (index >= 0)
-        {
-            auto ParmName = Cmd[i].substr(0, index);
-            if (ParmName == "Act")
-                ActValue = std::stol(Cmd[i].substr(sizeof("Act")));
-            else if (ParmName == "CFreq")
-                CenterFreq = std::stoll(Cmd[i].substr(sizeof("CFreq")));
-            else if (ParmName == "Mode")
-                mode = std::stol(Cmd[i].substr(sizeof("Mode")));
-            else if (ParmName == "Scope")
-                scope = std::stol(Cmd[i].substr(sizeof("Scope")));
-        }
-    }
-    switch (ActValue)
-    {
-    case 1:
-    {
-        ControlReplay(TaskValue, 1, 0);
-        CmdCX.StartCenterFreq = CmdCX.StopCenterFreq = CenterFreq / 1e3;
-        std::cout << "StartFreq: " << CenterFreq << " StopFreq: " << CenterFreq << std::endl;
-        CmdCX.StateMachine = 2;
-        CmdCX.RFAttenuation = 10;
-        CmdCX.MFAttenuation = 0;
-        CmdCX.CorrectMode = 1;
-        CmdCX.SendCXCmd();
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        
-        CmdCX.RFAttenuation = g_Parameter.RFAttenuation;
-        CmdCX.MFAttenuation = g_Parameter.MFAttenuation;
-        CmdCX.CorrectMode = 0;
-        CmdCX.SendCXCmd();
-        //g_Parameter.SetTestCXResult(TaskValue, CenterFreq);
-        StartRevDataWork();
-        std::cout << "Type: Test Data, Val: Start Transfer State: Transfering" << std::endl;
-        SetAppConfig();
-        break;
-    }
-    case 2:
-    {
-        ControlReplay(TaskValue, 1, 0);
-        StopRevDataWork();
-        std::cout << "Type: Test Data, Val: Stop Transfer State: Stopped" << std::endl;
-        break;
-    }
-    default:
-    {
-        ControlReplay(TaskValue, 0, 0);
-        break;
-    }
-    }
 }
 
 void DBXXH::TcpSession::SetCmdNBReceiver(const std::vector<std::string>& Cmd)

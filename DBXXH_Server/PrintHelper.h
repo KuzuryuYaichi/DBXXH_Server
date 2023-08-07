@@ -39,12 +39,9 @@ namespace DBXXH
         }
 
         unsigned char DeviceID[14];
-        long long StartCenterFreq = CENTER_FREQ_HZ;
-        long long StopCenterFreq = CENTER_FREQ_HZ;
         char RFAttenuation = 10;
         char MFAttenuation = 0;
         char RfMode = 0;
-        char CorrectAttenuation = 15;
         char Resolution = 13;
         char Smooth = 1;
         int NbCenterFreqRF;
@@ -57,14 +54,6 @@ namespace DBXXH
             CX_SWEEP
         };
         DATA_TRANS DataType = CX_WB;
-
-        std::mutex ParameterMutex;
-        void SetCmd(long long CmdStartCenterFreq, long long CmdStopCenterFreq)
-        {
-            std::lock_guard<std::mutex> lock(ParameterMutex);
-            this->StartCenterFreq = CmdStartCenterFreq;
-            this->StopCenterFreq = CmdStopCenterFreq;
-        }
 
         std::mutex ParamPowerWBMutex;
         ParamPowerWB m_ParamPowerWB;

@@ -37,18 +37,14 @@ namespace DBXXH
 		std::mutex& SessionSetMutex;
 		std::mutex WriteLock;
 		unsigned int TaskValue = 0;
-		StructCmdCX CmdCX;
+		StructCmdWB CmdWB;
 		StructCmdZC CmdZC;
 		StructWorkCommandRev ReplayCommand;
 		StructDeviceScheckRev ReplayScheck;
 		size_t TransferByte = 0;
 
 		void SelfCheck();
-		bool SetCmdCXParm(const std::vector<std::string>&);
-		void SetCmdNBData(const std::vector<std::string>&);
-		void SetCmdWBData(const std::vector<std::string>&);
-		void SetCmdSweepData(const std::vector<std::string>&);
-		void SetCmdTestData(const std::vector<std::string>&);
+		bool SetCmdWBParams(const std::vector<std::string>& Cmd);
 		void SetCmdNBReceiver(const std::vector<std::string>&);
 		void SetCmdNBChannel(const std::vector<std::string>&);
 

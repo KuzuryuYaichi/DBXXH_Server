@@ -28,7 +28,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
             return;
         auto& PackIndex = PackIndexAll[recvData.Params.ChNum];
         auto& res = resAll[recvData.Params.ChNum];
-        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + 4 * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
+        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + MAX_CHANNEL * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
 
         if (PackIndex == 0 || res == nullptr)
         {
@@ -45,7 +45,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
             DataBase[p] = Data[p];
         }
 
-        if (++PackIndex == 4)
+        if (++PackIndex == MAX_CHANNEL)
         {
             socket.NBZCDataReplay(NBWaveCXResult, res, DataLen, recvData.Params.ChNum);
             PackIndex = 0;
@@ -57,7 +57,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
         auto ptr = tsqueueZCs.wait_and_pop();
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
-            if (ptr->ptr[i].Params.Head == 0xABCD1234)
+            if (ptr->ptr[i].Params.Head == 0x1234ABCD)
                 ToWaveData(ptr->ptr[i]);
         }
     }

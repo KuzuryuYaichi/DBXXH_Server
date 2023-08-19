@@ -97,8 +97,7 @@ void DBXXH::DataDealCX(TcpSocket& socket)
             auto Range = start + sizeof(long long);
             for (int p = 0; p < LENGTH; ++p)
             {
-                Range[p] = std::max(Data[p] / 100 + 12, 0);
-                //Range[p] = Data[p].Range / 100 - 125;
+                Range[p] = std::max(Data[p] / 10 + 12, 0);
             }
             Range[LENGTH] = Range[LENGTH - 1];
         //    start += CXPerDataLen;
@@ -114,8 +113,8 @@ void DBXXH::DataDealCX(TcpSocket& socket)
         {
             auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
             std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);
-            if (recvData.Params.DataType != 3 /*|| ParamPowerWB.Resolution != ResolveResolution(recvData.Params.Resolution)*/)
-                return;
+            //if (recvData.Params.DataType != 3 /*|| ParamPowerWB.Resolution != ResolveResolution(recvData.Params.Resolution)*/)
+            //    return;
             ToPowerWB(recvData);
             break;
         }

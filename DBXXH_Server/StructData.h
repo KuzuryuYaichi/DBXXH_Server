@@ -13,7 +13,11 @@ struct CommonParams
 	unsigned char DataType; // 4 17	1	数据类型	0x01：窄带模拟解调结果；0x02：窄带DDC IQ；0x03：宽带FFT数据；0x04：脉冲监测结果；
 	unsigned char ChNum;// 5 18	1	通道号	17值为0x01 / 02时 - x01~0x08为通道序号
 	unsigned char DataSubType; // 6 19	1	数据分类型	17值为0x01时 - 0x01~0x07 AM / FM / PM / USB / LSB / ISB / CW
-	unsigned char Reserved[13]; // 7 20 - 32	13	补零
+	unsigned char Resoulution; //1	宽带FFT分辨率	0x0A~0x0E为宽带FFT分辨率序号
+	unsigned char Smooth; //1	宽带FFT平滑次数	0x04、0x08、0x10、0x20、0x40对应于4、8、16、32、64次平滑
+	unsigned char SimBand; //1	放大倍数	默认0x02    0x02 - 0x40
+	unsigned int CenterFreq; //1	DDS中心频点	默认15M 即0x01400000
+	unsigned char Reserved[6]; // 7 20 - 32	13	补零
 };
 
 struct DataWB_FFT

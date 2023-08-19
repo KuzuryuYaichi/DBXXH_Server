@@ -86,7 +86,7 @@ void ReadThread(xdma_device& dev, P_CXDATA_CALLBACK& CallBackCX, P_ZCDATA_CALLBA
     try
     {
         CX_Thread = std::thread(ThreadProcDataCX, 0, sizeof(DataWB_FFT), 1);
-        //ZC_Thread = std::thread(ThreadProcDataZC, 1, sizeof(DataWB_FFT), 1);
+        ZC_Thread = std::thread(ThreadProcDataZC, 1, sizeof(DataNB_DDC), 1);
     }
     catch (const std::exception& e)
     {

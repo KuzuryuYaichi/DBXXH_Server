@@ -58,12 +58,12 @@ namespace DBXXH
     struct ParamPowerWB
     {
         long long Time; // 开始时间	INT64	8		本功率谱数据对应时域样点的首样点时刻，高精度时间格式，见2.1.2.1节
-        float Resolution; // 频率分辨率	FLOAT	4	KHz
-        int DataPoint; // FFT点数 	INT32	4		FFT长度
+        float Resolution = 2.93; // 频率分辨率	FLOAT	4	KHz
+        int DataPoint = DataWB_FFT::LENGTH + 1; // FFT点数 	INT32	4		FFT长度
         int SamplePoint; // 数据样点数 	INT32	4		FFT处理的数据样点数
         short Window; // 窗函数类型 	INT16	2		见B.26
-        long long StartFreq; // 起始频率	INT64	8	Hz
-        long long StopFreq; // 终止频率	INT64	8	Hz
+        long long StartFreq = 0; // 起始频率	INT64	8	Hz
+        long long StopFreq = 30000000; // 终止频率	INT64	8	Hz
         int ChannelNum; // 信道总数	INT32	4		由频率分辨率决定的数字信道化的信道数量，信道总数 = （终止频率 - 起始频率） / 频率分辨率 + 1
 
         ParamPowerWB() = default;

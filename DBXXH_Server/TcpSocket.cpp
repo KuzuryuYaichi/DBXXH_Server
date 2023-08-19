@@ -21,9 +21,9 @@ void DBXXH::TcpSocket::async_accept()
         m_acceptor.async_accept(m_socket, [this](const boost::system::error_code& err)
         {
             if (err.failed())
-            {
                 std::cout << "Accept Failed: " << err.what() << std::endl;
-            }
+            else
+                std::cout << "Accept Succeed" << std::endl;
             auto session = std::make_shared<TcpSession>(std::move(m_socket), SessionSet, SessionSetMutex);
             session->AddToSet();
             async_accept();

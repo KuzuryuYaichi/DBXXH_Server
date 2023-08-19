@@ -296,7 +296,9 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
 
 void DBXXH::TcpSession::SelfCheck()
 {
-
+    CmdWB.Type = 1;
+    CmdWB.Context.SelfCheck.Ctrl = 0xAAAA;
+    std::memset(CmdWB.Context.SelfCheck.Reserved, 0, sizeof(CmdWB.Context.SelfCheck.Reserved));
 }
 
 bool DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
@@ -310,15 +312,18 @@ bool DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             auto ParamName = Cmd[i].substr(0, index);
             if (ParamName == "FreqRes")
             {
+                CmdWB.Type = 0x22F1;
                 float FreqResValue = std::stof(Cmd[i].substr(sizeof("FreqRes")));
-                if (FreqResValue == 25.0)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 10;
-                else if (FreqResValue == 12.5)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 11;
-                else if (FreqResValue == 6.25)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 12;
-                else if (FreqResValue == 3.125)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 13;
+                if (FreqResValue == 0x0E)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0E;
+                else if (FreqResValue == 0x0D)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0D;
+                else if (FreqResValue == 0x0C)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0C;
+                else if (FreqResValue == 0x0B)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0B;
+                else if (FreqResValue == 0x0A)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0A;
                 else
                     res = false;
                 std::cout << "FreqResolution: " << FreqResValue << std::endl;
@@ -326,55 +331,69 @@ bool DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "SimBW")
             {
+                CmdWB.Type = 0x23F1;
                 auto simBW = std::stoi(Cmd[i].substr(sizeof("SimBW")));
-                if (simBW != BAND_WIDTH_KHZ)
+                if (simBW == 1)
+                    g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 1;
+                else if (simBW == 2)
+                    g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 2;
+                else if (simBW == 3)
+                    g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 3;
+                else if (simBW == 4)
+                    g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 4;
+                else if (simBW == 5)
+                    g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 5;
+                else if (simBW == 6)
+                    g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 6;
+                else
                     res = false;
                 std::cout << "SimulateBandwidth: " << simBW << std::endl;
                 ReplayCommand.SimBW = simBW;
             }
             else if (ParamName == "SmNum")
             {
+                CmdWB.Type = 0x22F1;
                 auto SmNumValue = std::stoi(Cmd[i].substr(sizeof("SmNum")));
                 switch (SmNumValue)
                 {
-                case 1:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 1; break;
-                case 2:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 2; break;
-                case 4:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 4; break;
-                case 8:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 8; break;
-                case 16: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 16; break;
-                case 32: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 32; break;
+                case 1:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 1; CmdWB.Context.FFT_Param.SmoothLog = 0;  break;
+                case 2:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 2; CmdWB.Context.FFT_Param.SmoothLog = 1;  break;
+                case 4:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 4; CmdWB.Context.FFT_Param.SmoothLog = 2;  break;
+                case 8:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 8; CmdWB.Context.FFT_Param.SmoothLog = 3;  break;
+                case 16: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 16; CmdWB.Context.FFT_Param.SmoothLog = 4;  break;
+                case 32: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 32; CmdWB.Context.FFT_Param.SmoothLog = 5;  break;
                 default: res = false;
                 }
+                CmdWB.Context.FFT_Param.PlaceHolder_ = 0;
                 std::cout << "SmoothTime: " << CmdWB.Context.FFT_Param.Smooth;
                 ReplayCommand.SmNum = CmdWB.Context.FFT_Param.Smooth;
             }
-            else if (ParamName == "WinType")
+            else if (ParamName == "RcvMode")
             {
-                auto WinType = std::stoi(Cmd[i].substr(sizeof("WinType")));
-                switch (WinType)
+                auto RcvModeValue = std::stoi(Cmd[i].substr(sizeof("RcvMode")));
+                switch (RcvModeValue)
                 {
-                case 0:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 0; break;
-                case 1:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 1; break;
-                case 2:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 2; break;
-                case 3:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 3; break;
-                case 4:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.WinType = 4; break;
-                default: res = false;
+                case 0: CmdWB.Type = 1; std::cout << "WorkMode: Normal Mode" << std::endl; break;
+                case 1: res = false; break;
+                case 2: CmdWB.Type = 2; std::cout << "WorkMode: Low Noise Mode" << std::endl; break;
+                default: res = false; break;
                 }
-                std::cout << "SmoothTime: " << CmdWB.Context.FFT_Param.Smooth;
-                ReplayCommand.SmNum = CmdWB.Context.FFT_Param.Smooth;
+                ReplayCommand.RcvMode = RcvModeValue;
             }
-            //else if (ParmName == "RcvMode")
-            //{
-            //    auto RcvModeValue = std::stoi(Cmd[i].substr(sizeof("RcvMode")));
-            //    switch (RcvModeValue)
-            //    {
-            //    case 0: CmdWB.RfMode = 1; std::cout << "WorkMode: Normal Mode" << std::endl; break;
-            //    case 1: res = false; break;
-            //    case 2: CmdWB.RfMode = 2; std::cout << "WorkMode: Low Noise Mode" << std::endl; break;
-            //    default: res = false; break;
-            //    }
-            //    ReplayCommand.RcvMode = RcvModeValue;
-            //}
+            else if (ParamName == "MGC")
+            {
+                auto MGC = std::stoi(Cmd[i].substr(sizeof("MGC")));
+                if (MGC >= 0 && MGC <= 60)
+                {
+                    CmdWB.Context.Rf_Param.DataType = 1;
+                    std::cout << "GainType: MGC, GainValue: " << MGC << std::endl;
+                    if (MGC < 30)
+                    {
+                        g_Parameter.MFAttenuation = CmdWB.Context.Rf_Param.Function.Desc = MGC;
+                    }
+                }
+                ReplayCommand.MGC = MGC;
+            }
         }
     }
     return res;

@@ -57,7 +57,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
         auto ptr = tsqueueZCs.wait_and_pop();
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
-            if (ptr->ptr[i].Params.Head == 0x1234ABCD)
+            if (ptr->ptr[i].Params.Head == 0xABCD1234)
                 ToWaveData(ptr->ptr[i]);
         }
     }

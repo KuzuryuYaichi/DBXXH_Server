@@ -128,7 +128,8 @@ void DBXXH::DataDealCX(TcpSocket& socket)
         auto ptr = tsqueueCXs.wait_and_pop();
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
-            GetQueueDataFun(ptr->ptr[i]);
+            if (ptr->ptr[i].Params.Head == 0xABCD1234)
+                GetQueueDataFun(ptr->ptr[i]);
         }
     }
 };

@@ -39,11 +39,12 @@ namespace DBXXH
         }
 
         unsigned char DeviceID[14];
-        char RFAttenuation = 10;
-        char MFAttenuation = 0;
-        char RfMode = 0;
+        char GainMode = 0;
+        char RfGain = 0;
+        char DigitGain = 0;
         char Resolution = 13;
         char Smooth = 1;
+        char Feedback = 0;
         int NbCenterFreqRF;
 
         enum DATA_TRANS

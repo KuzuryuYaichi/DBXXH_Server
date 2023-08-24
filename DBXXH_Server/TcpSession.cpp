@@ -255,24 +255,15 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
     }
     case 0x0103:
     {
-        bool ControlState = SetCmdWBParams(Cmd);
-        if (ControlState)
-        {
-            std::cout << "Type: WorkParam Set, Val: CX Param Set, State: Setting" << std::endl;
-            CmdWB.SendCXCmd();
-            //g_Parameter.SetFixedCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
-            //g_Parameter.SetSweepCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
-            //g_Parameter.SetTestCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
-            ControlReplay(TaskValue, 1, 0);
-            ReplayCommand.Task = TaskValue;
-            WorkParmReplay(ReplayCommand);
-            SetAppConfig();
-            std::cout << "State: Setted" << std::endl;
-        }
-        else
-        {
-            ControlReplay(TaskValue, 0, 0);
-        }
+        SetCmdWBParams(Cmd);
+        std::cout << "Type: WorkParam Set, Val: CX Param Set, State: Setting" << std::endl;
+        //g_Parameter.SetFixedCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
+        //g_Parameter.SetSweepCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
+        //g_Parameter.SetTestCXResult(TaskValue, (unsigned int)CmdWB.Context.FFT_Param.DataPoints);
+        ControlReplay(TaskValue, 1, 0);
+        ReplayCommand.Task = TaskValue;
+        WorkParmReplay(ReplayCommand);
+        SetAppConfig();
         break;
     }
     case 0x0403:
@@ -301,33 +292,20 @@ void DBXXH::TcpSession::SelfCheck()
     std::memset(CmdWB.Context.SelfCheck.Reserved, 0, sizeof(CmdWB.Context.SelfCheck.Reserved));
 }
 
-bool DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
+void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
 {
-    bool res = true;
     for (size_t n = Cmd.size(), i = 3; i < n; ++i)
     {
         auto index = Cmd[i].find_first_of(':');
         if (index >= 0)
         {
             auto ParamName = Cmd[i].substr(0, index);
-            if (ParamName == "FreqRes")
+            if (ParamName == "CenterFreq")
             {
-                CmdWB.Type = 0x22F1;
-                float FreqResValue = std::stof(Cmd[i].substr(sizeof("FreqRes")));
-                if (FreqResValue == 0x0E)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0E;
-                else if (FreqResValue == 0x0D)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0D;
-                else if (FreqResValue == 0x0C)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0C;
-                else if (FreqResValue == 0x0B)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0B;
-                else if (FreqResValue == 0x0A)
-                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0A;
-                else
-                    res = false;
-                std::cout << "FreqResolution: " << FreqResValue << std::endl;
-                ReplayCommand.FreqRes = FreqResValue;
+                CmdWB.Type = 0x23F1;
+                auto CenterFreq_MHz = std::stoull(Cmd[i].substr(sizeof("CenterFreq"))) / 1e6;
+                CmdWB.Context.WB_DDC_Param.CenterFreq = std::pow(2, 22) * CenterFreq_MHz / 3;
+                std::cout << "CenterFreq: " << CenterFreq_MHz << std::endl;
             }
             else if (ParamName == "SimBW")
             {
@@ -346,57 +324,120 @@ bool DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
                 else if (simBW == 6)
                     g_Parameter.Resolution = CmdWB.Context.WB_DDC_Param.CIC = 6;
                 else
-                    res = false;
+                    continue;
                 std::cout << "SimulateBandwidth: " << simBW << std::endl;
+                CmdWB.SendCXCmd();
                 ReplayCommand.SimBW = simBW;
+            }
+            else if (ParamName == "FreqRes")
+            {
+                CmdWB.Type = 0x22F1;
+                auto FreqResValue = std::stoi(Cmd[i].substr(sizeof("FreqRes")));
+                if (FreqResValue == 0x0E)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0E;
+                else if (FreqResValue == 0x0D)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0D;
+                else if (FreqResValue == 0x0C)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0C;
+                else if (FreqResValue == 0x0B)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0B;
+                else if (FreqResValue == 0x0A)
+                    g_Parameter.Resolution = CmdWB.Context.FFT_Param.DataPoints = 0x0A;
+                else
+                    continue;
+                std::cout << "FreqResolution: " << FreqResValue << std::endl;
+                ReplayCommand.FreqRes = FreqResValue;
             }
             else if (ParamName == "SmNum")
             {
                 CmdWB.Type = 0x22F1;
                 auto SmNumValue = std::stoi(Cmd[i].substr(sizeof("SmNum")));
-                switch (SmNumValue)
+                if (SmNumValue == 1)
                 {
-                case 1:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 1; CmdWB.Context.FFT_Param.SmoothLog = 0;  break;
-                case 2:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 2; CmdWB.Context.FFT_Param.SmoothLog = 1;  break;
-                case 4:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 4; CmdWB.Context.FFT_Param.SmoothLog = 2;  break;
-                case 8:  g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 8; CmdWB.Context.FFT_Param.SmoothLog = 3;  break;
-                case 16: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 16; CmdWB.Context.FFT_Param.SmoothLog = 4;  break;
-                case 32: g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 32; CmdWB.Context.FFT_Param.SmoothLog = 5;  break;
-                default: res = false;
+                    g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 1; CmdWB.Context.FFT_Param.SmoothLog = 0;
                 }
+                else if (SmNumValue == 2)
+                {
+                    g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 2; CmdWB.Context.FFT_Param.SmoothLog = 1;
+                }
+                else if (SmNumValue == 4)
+                {
+                    g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 4; CmdWB.Context.FFT_Param.SmoothLog = 2;
+                }
+                else if (SmNumValue == 8)
+                {
+                    g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 8; CmdWB.Context.FFT_Param.SmoothLog = 3;
+                }
+                else if (SmNumValue == 16)
+                {
+                    g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 16; CmdWB.Context.FFT_Param.SmoothLog = 4;
+                }
+                else if (SmNumValue == 32)
+                {
+                    g_Parameter.Smooth = CmdWB.Context.FFT_Param.Smooth = 32; CmdWB.Context.FFT_Param.SmoothLog = 5;
+                }
+                else
+                    continue;
                 CmdWB.Context.FFT_Param.PlaceHolder_ = 0;
+                CmdWB.SendCXCmd();
                 std::cout << "SmoothTime: " << CmdWB.Context.FFT_Param.Smooth;
                 ReplayCommand.SmNum = CmdWB.Context.FFT_Param.Smooth;
             }
-            else if (ParamName == "RcvMode")
+            else if (ParamName == "GainMode")
             {
-                auto RcvModeValue = std::stoi(Cmd[i].substr(sizeof("RcvMode")));
-                switch (RcvModeValue)
+                auto GainMode = std::stoi(Cmd[i].substr(sizeof("GainMode")));
+                if (GainMode == 0)
                 {
-                case 0: CmdWB.Type = 1; std::cout << "WorkMode: Normal Mode" << std::endl; break;
-                case 1: res = false; break;
-                case 2: CmdWB.Type = 2; std::cout << "WorkMode: Low Noise Mode" << std::endl; break;
-                default: res = false; break;
+                    g_Parameter.GainMode = CmdWB.Context.Rf_Param.DataType = 1;
+                    std::cout << "GainMode: AGC" << std::endl;
                 }
-                ReplayCommand.RcvMode = RcvModeValue;
+                else if (GainMode == 1)
+                {
+                    g_Parameter.GainMode = CmdWB.Context.Rf_Param.DataType = 2;
+                    std::cout << "GainMode: MGC" << std::endl;
+                }
+                else
+                    continue;
+                CmdWB.Type = 0x27F1;
+                ReplayCommand.GainMode = GainMode;
             }
-            else if (ParamName == "MGC")
+            else if (ParamName == "Rf_MGC")
             {
-                auto MGC = std::stoi(Cmd[i].substr(sizeof("MGC")));
-                if (MGC >= 0 && MGC <= 60)
-                {
-                    CmdWB.Context.Rf_Param.DataType = 1;
-                    std::cout << "GainType: MGC, GainValue: " << MGC << std::endl;
-                    if (MGC < 30)
-                    {
-                        g_Parameter.MFAttenuation = CmdWB.Context.Rf_Param.Function.Desc = MGC;
-                    }
-                }
-                ReplayCommand.MGC = MGC;
+                auto MGC = std::stoi(Cmd[i].substr(sizeof("Rf_MGC")));
+                if (MGC > 31 || MGC < 0)
+                    continue;
+                CmdWB.Type = 0x26F1;
+                CmdWB.Context.Rf_Param.DataType = 1;
+                CmdWB.SendCXCmd();
+                std::cout << "GainType: MGC, GainValue: " << MGC << std::endl;
+                g_Parameter.RfGain = CmdWB.Context.Rf_Param.Value = MGC;
+                ReplayCommand.Rf_MGC = MGC;
+            }
+            else if (ParamName == "Digit_MGC")
+            {
+                auto MGC = std::stoi(Cmd[i].substr(sizeof("Digit_MGC")));
+                if (MGC > 31 || MGC < 0)
+                    continue;
+                CmdWB.Type = 0x28F1;
+                CmdWB.Context.Digit_Param.DataType = 1;
+                CmdWB.Context.Digit_Param.Value = MGC;
+                CmdWB.SendCXCmd();
+                std::cout << "GainType: MGC, GainValue: " << MGC << std::endl;
+                g_Parameter.DigitGain = CmdWB.Context.Digit_Param.Value = MGC;
+                ReplayCommand.Digit_MGC = MGC;
+            }
+            else if (ParamName == "Feedback")
+            {
+                auto Feedback = std::stoi(Cmd[i].substr(sizeof("Feedback")));
+                CmdWB.Type = 0x26F1;
+                CmdWB.Context.Digit_Param.DataType = 2;
+                CmdWB.Context.Digit_Param.Value = Feedback;
+                CmdWB.SendCXCmd();
+                std::cout << "Feedback: " << Feedback << std::endl;
+                g_Parameter.Feedback = Feedback;
             }
         }
     }
-    return res;
 }
 
 void DBXXH::TcpSession::SetCmdNBReceiver(const std::vector<std::string>& Cmd)

@@ -44,7 +44,7 @@ namespace DBXXH
 		size_t TransferByte = 0;
 
 		void SelfCheck();
-		bool SetCmdWBParams(const std::vector<std::string>& Cmd);
+		void SetCmdWBParams(const std::vector<std::string>& Cmd);
 		void SetCmdNBReceiver(const std::vector<std::string>&);
 		void SetCmdNBChannel(const std::vector<std::string>&);
 

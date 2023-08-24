@@ -125,9 +125,10 @@ namespace DBXXH
         unsigned int Task;
         float FreqRes;
         int SimBW;
-        short MGC;
+        short Digit_MGC;
+        short Rf_MGC;
         short SmNum;
-        short RcvMode;
+        short GainMode;
     };
 
     struct StructDeviceScheckRev

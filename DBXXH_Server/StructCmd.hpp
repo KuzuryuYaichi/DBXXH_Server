@@ -50,7 +50,7 @@ namespace DBXXH
                 char Reserved[5];
             } WB_DDC_Param;
 
-            struct Rf_Param
+            struct Rf_Misc_Param
             {
                 char DataType;
                 union Function
@@ -60,8 +60,23 @@ namespace DBXXH
                     char Reserved;
                 } Function;
                 char Reserved[8];
+            } Rf_Misc_Param;
+
+            struct Rf_Param
+            {
+                char DataType;
+                char Value;
+                char Reserved[8];
             } Rf_Param;
+
+            struct Digit_Param
+            {
+                char DataType;
+                char Value;
+                char Reserved[8];
+            } Digit_Param;
         } Context;
+
         unsigned short Tail = 0x5FF5;
 
         StructCmdWB() {}

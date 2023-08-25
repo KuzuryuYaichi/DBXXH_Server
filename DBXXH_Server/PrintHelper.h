@@ -26,17 +26,7 @@ namespace DBXXH
     struct PARAMETER_SET: public SingletonHolder<PARAMETER_SET>
     {
     public:
-        static constexpr int CX_CH_NUM = 4;
-        static constexpr int ZC_CH_NUM = 16;
-        static constexpr int CALC_MASK()
-        {
-            int res = 0;
-            for (int i = 0; i < CX_CH_NUM; ++i)
-            {
-                res |= 1 << i;
-            }
-            return res;
-        }
+        static constexpr int ZC_CH_NUM = 8;
 
         unsigned char DeviceID[14];
         char GainMode = 0;
@@ -96,11 +86,6 @@ namespace DBXXH
             std::lock_guard<std::mutex> lock(NBWaveMutex);
             m_NBWaveZCResult[ChNum].SetNBWaveResultBandWidth(BandWidth);
         }
-
-        char isTestingInner = CALC_MASK();
-        char isTestingOuter = CALC_MASK();
-        bool SelfTestInner[CX_CH_NUM] = { false };
-        bool SelfTestOuter[CX_CH_NUM] = { false };
     };
 
     static inline auto& g_Parameter = PARAMETER_SET::get_instance();

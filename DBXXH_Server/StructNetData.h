@@ -75,8 +75,8 @@ namespace DBXXH
     {
         long long StartTime;
         int NanoSeconds;
-        long long Frequency; // Hz
-        int BandWidth; // Hz
+        unsigned long long Frequency = 15 * 1e6; // Hz
+        unsigned int BandWidth = 0.15 * 1e6; // Hz
         int Sps;
         char Accuracy = 1; // 0: Byte; 1: Int16; 2: Int32; 3: Float
         char ChannelNum = 2; // 1:Real; 2: Real-Imagine

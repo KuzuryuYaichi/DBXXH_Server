@@ -20,15 +20,14 @@ void DBXXH::DataDealZC(TcpSocket& socket)
 {
     auto ToWaveData = [&](const DataNB_DDC& recvData)
     {
-        static constexpr auto MAX_CHANNEL = 8;
-        static unsigned char PackIndexAll[MAX_CHANNEL] = { 0 };
-        static std::unique_ptr<StructNetData> resAll[MAX_CHANNEL] = { nullptr };
+        static unsigned char PackIndexAll[PARAMETER_SET::ZC_CH_NUM] = { 0 };
+        static std::unique_ptr<StructNetData> resAll[PARAMETER_SET::ZC_CH_NUM] = { nullptr };
 
-        if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= MAX_CHANNEL)
+        if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= PARAMETER_SET::ZC_CH_NUM)
             return;
         auto& PackIndex = PackIndexAll[recvData.Params.ChNum];
         auto& res = resAll[recvData.Params.ChNum];
-        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + MAX_CHANNEL * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
+        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + PARAMETER_SET::ZC_CH_NUM * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
 
         if (PackIndex == 0 || res == nullptr)
         {
@@ -45,7 +44,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
             DataBase[p] = Data[p];
         }
 
-        if (++PackIndex == MAX_CHANNEL)
+        if (++PackIndex == 8)
         {
             socket.NBZCDataReplay(NBWaveCXResult, res, DataLen, recvData.Params.ChNum);
             PackIndex = 0;

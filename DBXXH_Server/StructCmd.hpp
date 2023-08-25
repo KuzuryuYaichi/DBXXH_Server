@@ -16,15 +16,15 @@ namespace DBXXH
     {
         unsigned char Head[6] = { (unsigned char)0xFA, (unsigned char)0xA5, (unsigned char)0xFB, (unsigned char)0xB5, (unsigned char)0xFC, (unsigned char)0xC5 };
         unsigned short Type;
-        union Context
+        union 
         {
-            struct SelfCheck
+            struct SelfCheck_
             {
                 unsigned short Ctrl;
                 char Reserved[8];
             } SelfCheck;
 
-            struct PulseDemodeParam
+            struct PulseDemodeParam_
             {
                 unsigned short Channel;
                 unsigned short Ctrl;
@@ -33,7 +33,7 @@ namespace DBXXH
                 unsigned short PulseRangeDepress;
             } PulseDemodeParam;
 
-            struct FFT_Param
+            struct FFT_Param_
             {
                 char DataPoints;
                 char PlaceHolder_;
@@ -43,39 +43,27 @@ namespace DBXXH
                 char Reserved[5];
             } FFT_Param;
 
-            struct WB_DDC_Param
+            struct WB_DDC_Param_
             {
                 unsigned int CenterFreq;
                 char CIC;
                 char Reserved[5];
             } WB_DDC_Param;
 
-            struct Rf_Misc_Param
-            {
-                char DataType;
-                union Function
-                {
-                    char Desc;
-                    char Mode;
-                    char Reserved;
-                } Function;
-                char Reserved[8];
-            } Rf_Misc_Param;
-
-            struct Rf_Param
+            struct Rf_Param_
             {
                 char DataType;
                 char Value;
                 char Reserved[8];
             } Rf_Param;
 
-            struct Digit_Param
+            struct Digit_Param_
             {
                 char DataType;
                 char Value;
                 char Reserved[8];
             } Digit_Param;
-        } Context;
+        };
 
         unsigned short Tail = 0x5FF5;
 
@@ -89,26 +77,20 @@ namespace DBXXH
 
     struct StructCmdZC
     {
-        unsigned char CmdType = 0;
-        union
-        {
-            struct CMD_NB {
-                unsigned char Channel;
-                unsigned short CIC = 200;
-                unsigned int DDS;
-            } CmdNB;
-            struct CMD_RF {
-                unsigned char RfType;
-                unsigned int RfData;
-                unsigned char Reserved[2];
-            } CmdRF;
-        };
+        unsigned char Head[6] = { (unsigned char)0xFA, (unsigned char)0xA5, (unsigned char)0xFB, (unsigned char)0xB5, (unsigned char)0xFC, (unsigned char)0xC5 };
+        unsigned short Type;
+        unsigned short Channel;
+        unsigned short CIC;
+        unsigned char DemodType;
+        unsigned int DDS;
+        char ButterFly;
+        unsigned short Tail = 0x5FF5;
 
         StructCmdZC() {}
 
         void SendZCCmd()
         {
-            WriteStreamCmd((char*)this, sizeof(StructCmdZC), 1);
+            WriteStreamCmd((char*)this, sizeof(StructCmdZC), 0);
         }
     };
 

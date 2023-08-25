@@ -45,7 +45,6 @@ namespace DBXXH
 
 		void SelfCheck();
 		void SetCmdWBParams(const std::vector<std::string>& Cmd);
-		void SetCmdNBReceiver(const std::vector<std::string>&);
 		void SetCmdNBChannel(const std::vector<std::string>&);
 
 		void StartRevDataWork();

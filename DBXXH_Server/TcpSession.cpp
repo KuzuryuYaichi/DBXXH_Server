@@ -457,7 +457,7 @@ void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmd)
             {
                 auto Freq = std::stoull(Cmd[i].substr(sizeof("Freq")));
                 g_Parameter.SetNBWaveResultFrequency(CmdZC.Channel, Freq);
-                unsigned int DDS = std::round(std::pow(2, 27) * (Freq / 1e6) / 3);
+                unsigned int DDS = std::round(std::pow(2, 23) * (Freq / 1e6) / 3);
                 CmdZC.DDS = ((DDS & 0xFF) << 24) | ((DDS & 0xFF00) << 8) | ((DDS >> 8) & 0xFF00) | ((DDS >> 24) & 0xFF);
             }
             else if (ParmName == "DDCBW")

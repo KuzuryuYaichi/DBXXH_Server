@@ -58,16 +58,9 @@ namespace DBXXH
         void SetParamPowerWB(unsigned int Task, unsigned int Resolution)
         {
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
-            switch (Resolution)
-            {
-            case 10: m_ParamPowerWB.Resolution = 25.0; break;
-            case 11: m_ParamPowerWB.Resolution = 12.5; break;
-            case 12: m_ParamPowerWB.Resolution = 6.25; break;
-            case 13: m_ParamPowerWB.Resolution = 3.125; break;
-            default: break;
-            }
-            m_ParamPowerWB.ChannelNum = std::pow(2, 13 - Resolution);
-            m_ParamPowerWB.DataPoint = BAND_WIDTH_KHZ / m_ParamPowerWB.Resolution + 1;
+            m_ParamPowerWB.Resolution = Resolution;
+            m_ParamPowerWB.ChannelNum = std::pow(2, Resolution);
+            m_ParamPowerWB.DataPoint = std::pow(2, Resolution) + 1;
         }
 
         std::mutex NBWaveMutex;

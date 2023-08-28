@@ -16,18 +16,6 @@ void DBXXH::TcpSocket::PowerWBDataReplay(const ParamPowerWB& ReplayParm, const s
     SendMsg(res);
 }
 
-float DBXXH::ResolveResolution(unsigned char Resolution)
-{
-    switch (Resolution)
-    {
-    case 10: return 25.0;
-    case 11: return 12.5;
-    case 12: return 6.25;
-    case 13: return 3.125;
-    default: return 0;
-    }
-}
-
 long long DBXXH::timeConvert(unsigned long long t)
 {
     auto UnixTimeToFileTime = [](time_t tmUnixTime) -> long long
@@ -87,12 +75,12 @@ void DBXXH::DataDealCX(TcpSocket& socket)
             DataLen = PerDataLen,
             Datalen = sizeof(DataHead) + sizeof(ParamPowerWB) + DataLen + sizeof(DataEnd);
         auto res = std::make_unique<StructNetData>(0, Datalen);
-
+        auto CXGroupNum = std::pow(2, 0x0E - ParamPowerWB.Resolution);
         const auto LENGTH = ParamPowerWB.DataPoint - 1;
         auto Data = recvData.Data;
         auto start = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
-        //for (auto g = 0; g < ParamPowerWB.CXGroupNum; ++g)
-        //{
+        for (auto g = 0; g < CXGroupNum; ++g)
+        {
             auto& StartTime = *(long long*)start;
             auto Range = start + sizeof(long long);
             for (int p = 0; p < LENGTH; ++p)
@@ -100,9 +88,9 @@ void DBXXH::DataDealCX(TcpSocket& socket)
                 Range[p] = std::max(Data[p] / 10 + 12, 0);
             }
             Range[LENGTH] = Range[LENGTH - 1];
-        //    start += CXPerDataLen;
-        //}
-        socket.PowerWBDataReplay(ParamPowerWB, res, Datalen, 0);
+            socket.PowerWBDataReplay(ParamPowerWB, res, Datalen, 0);
+            start += PerDataLen;
+        }
     };
 
     auto GetQueueDataFun = [&](const DataWB_FFT& recvData)
@@ -113,8 +101,8 @@ void DBXXH::DataDealCX(TcpSocket& socket)
         {
             auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
             std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);
-            //if (recvData.Params.DataType != 3 /*|| ParamPowerWB.Resolution != ResolveResolution(recvData.Params.Resolution)*/)
-            //    return;
+            if (recvData.Params.DataType != 3 || ParamPowerWB.Resolution != recvData.Params.Resoulution)
+                return;
             ToPowerWB(recvData);
             break;
         }

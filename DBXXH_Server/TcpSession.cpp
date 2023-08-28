@@ -327,7 +327,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             else if (ParamName == "FreqRes")
             {
                 CmdWB.Type = 0x22F1;
-                auto FreqResValue = std::stoi(Cmd[i].substr(sizeof("FreqRes")));
+                auto FreqResValue = std::stoul(Cmd[i].substr(sizeof("FreqRes")));
                 if (FreqResValue == 0x0E)
                     g_Parameter.Resolution = CmdWB.FFT_Param.DataPoints = 0x0E;
                 else if (FreqResValue == 0x0D)
@@ -341,6 +341,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
                 else
                     continue;
                 std::cout << "FreqResolution: " << FreqResValue << std::endl;
+                g_Parameter.SetParamPowerWB(0, FreqResValue);
                 ReplayCommand.FreqRes = FreqResValue;
             }
             else if (ParamName == "SmNum")

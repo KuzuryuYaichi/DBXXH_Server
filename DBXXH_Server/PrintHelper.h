@@ -55,7 +55,7 @@ namespace DBXXH
             //m_ParamPowerWB.CenterFreq = CenterFreq;
 
         }
-        void SetParamPowerWB(unsigned int Task, unsigned int Resolution)
+        void SetParamPowerWB(unsigned int Task, unsigned long Resolution)
         {
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
             m_ParamPowerWB.Resolution = Resolution;

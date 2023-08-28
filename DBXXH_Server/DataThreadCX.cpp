@@ -72,24 +72,21 @@ void DBXXH::DataDealCX(TcpSocket& socket)
     {
         auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
         const auto PerDataLen = sizeof(char) * ParamPowerWB.DataPoint,
-            DataLen = PerDataLen,
-            Datalen = sizeof(DataHead) + sizeof(ParamPowerWB) + DataLen + sizeof(DataEnd);
-        auto res = std::make_unique<StructNetData>(0, Datalen);
+            Datalen = sizeof(DataHead) + sizeof(ParamPowerWB) + PerDataLen + sizeof(DataEnd);
         auto CXGroupNum = std::pow(2, 0x0E - ParamPowerWB.Resolution);
         const auto LENGTH = ParamPowerWB.DataPoint - 1;
         auto Data = recvData.Data;
-        auto start = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
         for (auto g = 0; g < CXGroupNum; ++g)
         {
-            auto& StartTime = *(long long*)start;
-            auto Range = start + sizeof(long long);
+            auto res = std::make_unique<StructNetData>(0, Datalen);
+            auto Range = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
             for (int p = 0; p < LENGTH; ++p)
             {
                 Range[p] = std::max(Data[p] / 10 + 12, 0);
             }
             Range[LENGTH] = Range[LENGTH - 1];
             socket.PowerWBDataReplay(ParamPowerWB, res, Datalen, 0);
-            start += PerDataLen;
+            Data += LENGTH;
         }
     };
 

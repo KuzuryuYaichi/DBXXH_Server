@@ -60,7 +60,14 @@ namespace DBXXH
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
             m_ParamPowerWB.Resolution = Resolution;
             m_ParamPowerWB.ChannelNum = std::pow(2, Resolution);
-            m_ParamPowerWB.DataPoint = std::pow(2, Resolution) + 1;
+            switch (Resolution)
+            {
+            case 0x0E: m_ParamPowerWB.DataPoint = 10240 + 1; break;
+            case 0x0D: m_ParamPowerWB.DataPoint = 5120 + 1; break;
+            case 0x0C: m_ParamPowerWB.DataPoint = 2560 + 1; break;
+            case 0x0B: m_ParamPowerWB.DataPoint = 1280 + 1; break;
+            case 0x0A: m_ParamPowerWB.DataPoint = 640 + 1; break;
+            }
         }
 
         std::mutex NBWaveMutex;

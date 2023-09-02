@@ -90,22 +90,13 @@ void DBXXH::DataDealCX(TcpSocket& socket)
         }
     };
 
-    auto GetQueueDataFun = [&](const DataWB_FFT& recvData)
+    auto DataFilter = [&](const DataWB_FFT& recvData)
     {
-        switch (g_Parameter.DataType)
-        {
-        case 1: //WB
-        {
-            auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
-            std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);
-            if (recvData.Params.DataType != 3 || ParamPowerWB.Resolution != recvData.Params.Resoulution)
-                return;
-            ToPowerWB(recvData);
-            break;
-        }
-        default:
+        auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
+        std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);
+        if (ParamPowerWB.Resolution != recvData.Params.WBParams.Resolution)
             return;
-        }
+        ToPowerWB(recvData);
     };
 
     while (true)
@@ -114,7 +105,7 @@ void DBXXH::DataDealCX(TcpSocket& socket)
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
             if (ptr->ptr[i].Params.Head == 0xABCD1234)
-                GetQueueDataFun(ptr->ptr[i]);
+                DataFilter(ptr->ptr[i]);
         }
     }
 };

@@ -29,22 +29,29 @@ namespace DBXXH
         static constexpr int ZC_CH_NUM = 8;
 
         unsigned char DeviceID[14];
-        char GainMode = 0;
-        char RfGain = 0;
-        char DigitGain = 0;
-        char Resolution = 13;
-        char Smooth = 1;
-        char Feedback = 0;
-        int NbCenterFreqRF;
 
-        enum DATA_TRANS
+        struct WB_Params_
         {
-            TEST_CHANNEL = 0,
-            CX_WB,
-            CX_NB,
-            CX_SWEEP
-        };
-        DATA_TRANS DataType = CX_WB;
+            char GainMode = 0;
+            char RfGain = 0;
+            char DigitGain = 0;
+            char Resolution = 13;
+            char Smooth = 1;
+            char Feedback = 0;
+            int NbCenterFreqRF;
+        } WB_Params;
+
+        struct NB_Params_
+        {
+            unsigned short BankNum;
+            struct NB_Param_
+            {
+                unsigned int DDS;
+                unsigned short CIC;
+                unsigned char Demod;
+            } NB_Param[ZC_CH_NUM];
+        } NB_Params;
+        
 
         std::mutex ParamPowerWBMutex;
         ParamPowerWB m_ParamPowerWB;

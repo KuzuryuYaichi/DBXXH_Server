@@ -23,8 +23,6 @@ void DBXXH::DataDealZC(TcpSocket& socket)
         static unsigned char PackIndexAll[PARAMETER_SET::ZC_CH_NUM] = { 0 };
         static std::unique_ptr<StructNetData> resAll[PARAMETER_SET::ZC_CH_NUM] = { nullptr };
 
-        if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= PARAMETER_SET::ZC_CH_NUM)
-            return;
         auto& PackIndex = PackIndexAll[recvData.Params.ChNum];
         auto& res = resAll[recvData.Params.ChNum];
         const auto DataLen = sizeof(DataHead) + sizeof(StructNBWaveZCResult) + PARAMETER_SET::ZC_CH_NUM * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
@@ -51,13 +49,23 @@ void DBXXH::DataDealZC(TcpSocket& socket)
         }
     };
 
+    auto DataFilter = [&](const DataNB_DDC& recvData)
+    {
+        if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= PARAMETER_SET::ZC_CH_NUM)
+            return;
+        auto& NB_Param = g_Parameter.NB_Params.NB_Param[recvData.Params.ChNum];
+        if (NB_Param.DDS != recvData.Params.NBParams.DDS || NB_Param.CIC != recvData.Params.NBParams.CIC || NB_Param.Demod != recvData.Params.Demod)
+            return;
+        ToWaveData(recvData);
+    };
+
     while (true)
     {
         auto ptr = tsqueueZCs.wait_and_pop();
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
             if (ptr->ptr[i].Params.Head == 0xABCD1234)
-                ToWaveData(ptr->ptr[i]);
+                DataFilter(ptr->ptr[i]);
         }
     }
 };

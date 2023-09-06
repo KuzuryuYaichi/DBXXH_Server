@@ -282,6 +282,7 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
 
 void DBXXH::TcpSession::SelfCheck()
 {
+    StructCmdWB CmdWB;
     CmdWB.Type = 1;
     CmdWB.SelfCheck.Ctrl = 0xAAAA;
     std::memset(CmdWB.SelfCheck.Reserved, 0, sizeof(CmdWB.SelfCheck.Reserved));
@@ -289,6 +290,16 @@ void DBXXH::TcpSession::SelfCheck()
 
 void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
 {
+    StructCmdWB Cmd_DDC, Cmd_FFT, Cmd_Rf, Cmd_Digit, Cmd_Feedback, Cmd_SelfCheck;
+    Cmd_DDC.Type = 0x23F1;
+    Cmd_FFT.Type = 0x22F1;
+    Cmd_Rf.Type = 0x26F1;
+    Cmd_Rf.Rf_Param.Type = 1;
+    Cmd_Digit.Type = 0x27F1;
+    Cmd_Feedback.Type = 0x26F1;
+    Cmd_Feedback.Rf_Param.Type = 2;
+    Cmd_SelfCheck.Type = 0x26F1;
+    Cmd_SelfCheck.Rf_Param.Type = 3;
     for (size_t n = Cmd.size(), i = 3; i < n; ++i)
     {
         auto index = Cmd[i].find_first_of(':');
@@ -297,47 +308,43 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             auto ParamName = Cmd[i].substr(0, index);
             if (ParamName == "CenterFreq")
             {
-                CmdWB.Type = 0x23F1;
                 auto CenterFreq_MHz = std::stoull(Cmd[i].substr(sizeof("CenterFreq"))) / 1e6;
-                CmdWB.WB_DDC_Param.CenterFreq = std::pow(2, 22) * CenterFreq_MHz / 3;
+                Cmd_DDC.WB_DDC_Param.CenterFreq = std::pow(2, 22) * CenterFreq_MHz / 3;
                 std::cout << "CenterFreq: " << CenterFreq_MHz << std::endl;
             }
             else if (ParamName == "SimBW")
             {
-                CmdWB.Type = 0x23F1;
                 auto simBW = std::stoi(Cmd[i].substr(sizeof("SimBW")));
                 if (simBW == 1)
-                    g_Parameter.WB_Params.Resolution = CmdWB.WB_DDC_Param.CIC = 1;
+                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 1;
                 else if (simBW == 2)
-                    g_Parameter.WB_Params.Resolution = CmdWB.WB_DDC_Param.CIC = 2;
+                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 2;
                 else if (simBW == 3)
-                    g_Parameter.WB_Params.Resolution = CmdWB.WB_DDC_Param.CIC = 3;
+                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 3;
                 else if (simBW == 4)
-                    g_Parameter.WB_Params.Resolution = CmdWB.WB_DDC_Param.CIC = 4;
+                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 4;
                 else if (simBW == 5)
-                    g_Parameter.WB_Params.Resolution = CmdWB.WB_DDC_Param.CIC = 5;
+                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 5;
                 else if (simBW == 6)
-                    g_Parameter.WB_Params.Resolution = CmdWB.WB_DDC_Param.CIC = 6;
+                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 6;
                 else
                     continue;
                 std::cout << "SimulateBandwidth: " << simBW << std::endl;
-                CmdWB.SendCXCmd();
                 ReplayCommand.SimBW = simBW;
             }
             else if (ParamName == "FreqRes")
             {
-                CmdWB.Type = 0x22F1;
                 auto FreqResValue = std::stoul(Cmd[i].substr(sizeof("FreqRes")));
                 if (FreqResValue == 0x0E)
-                    g_Parameter.WB_Params.Resolution = CmdWB.FFT_Param.DataPoints = 0x0E;
+                    g_Parameter.WB_Params.Resolution = Cmd_FFT.FFT_Param.DataPoints = 0x0E;
                 else if (FreqResValue == 0x0D)
-                    g_Parameter.WB_Params.Resolution = CmdWB.FFT_Param.DataPoints = 0x0D;
+                    g_Parameter.WB_Params.Resolution = Cmd_FFT.FFT_Param.DataPoints = 0x0D;
                 else if (FreqResValue == 0x0C)
-                    g_Parameter.WB_Params.Resolution = CmdWB.FFT_Param.DataPoints = 0x0C;
+                    g_Parameter.WB_Params.Resolution = Cmd_FFT.FFT_Param.DataPoints = 0x0C;
                 else if (FreqResValue == 0x0B)
-                    g_Parameter.WB_Params.Resolution = CmdWB.FFT_Param.DataPoints = 0x0B;
+                    g_Parameter.WB_Params.Resolution = Cmd_FFT.FFT_Param.DataPoints = 0x0B;
                 else if (FreqResValue == 0x0A)
-                    g_Parameter.WB_Params.Resolution = CmdWB.FFT_Param.DataPoints = 0x0A;
+                    g_Parameter.WB_Params.Resolution = Cmd_FFT.FFT_Param.DataPoints = 0x0A;
                 else
                     continue;
                 std::cout << "FreqResolution: " << FreqResValue << std::endl;
@@ -346,56 +353,52 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "SmNum")
             {
-                CmdWB.Type = 0x22F1;
                 auto SmNumValue = std::stoi(Cmd[i].substr(sizeof("SmNum")));
                 if (SmNumValue == 1)
                 {
-                    g_Parameter.WB_Params.Smooth = CmdWB.FFT_Param.Smooth = 1; CmdWB.FFT_Param.SmoothLog = 0;
+                    g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 1; Cmd_FFT.FFT_Param.SmoothLog = 0;
                 }
                 else if (SmNumValue == 2)
                 {
-                    g_Parameter.WB_Params.Smooth = CmdWB.FFT_Param.Smooth = 2; CmdWB.FFT_Param.SmoothLog = 1;
+                    g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 2; Cmd_FFT.FFT_Param.SmoothLog = 1;
                 }
                 else if (SmNumValue == 4)
                 {
-                    g_Parameter.WB_Params.Smooth = CmdWB.FFT_Param.Smooth = 4; CmdWB.FFT_Param.SmoothLog = 2;
+                    g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 4; Cmd_FFT.FFT_Param.SmoothLog = 2;
                 }
                 else if (SmNumValue == 8)
                 {
-                    g_Parameter.WB_Params.Smooth = CmdWB.FFT_Param.Smooth = 8; CmdWB.FFT_Param.SmoothLog = 3;
+                    g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 8; Cmd_FFT.FFT_Param.SmoothLog = 3;
                 }
                 else if (SmNumValue == 16)
                 {
-                    g_Parameter.WB_Params.Smooth = CmdWB.FFT_Param.Smooth = 16; CmdWB.FFT_Param.SmoothLog = 4;
+                    g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 16; Cmd_FFT.FFT_Param.SmoothLog = 4;
                 }
                 else if (SmNumValue == 32)
                 {
-                    g_Parameter.WB_Params.Smooth = CmdWB.FFT_Param.Smooth = 32; CmdWB.FFT_Param.SmoothLog = 5;
+                    g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 32; Cmd_FFT.FFT_Param.SmoothLog = 5;
                 }
                 else
                     continue;
-                CmdWB.FFT_Param.PlaceHolder_ = 0;
-                CmdWB.SendCXCmd();
-                std::cout << "SmoothTime: " << CmdWB.FFT_Param.Smooth;
-                ReplayCommand.SmNum = CmdWB.FFT_Param.Smooth;
+                Cmd_FFT.FFT_Param.PlaceHolder_ = 0;
+                std::cout << "SmoothTime: " << Cmd_FFT.FFT_Param.Smooth;
+                ReplayCommand.SmNum = Cmd_FFT.FFT_Param.Smooth;
             }
             else if (ParamName == "GainMode")
             {
-                CmdWB.Type = 0x27F1;
                 auto GainMode = std::stoi(Cmd[i].substr(sizeof("GainMode")));
                 if (GainMode == 0)
                 {
-                    g_Parameter.WB_Params.GainMode = CmdWB.Rf_Param.DataType = 1;
+                    g_Parameter.WB_Params.GainMode = Cmd_Rf.Rf_Param.State = 1;
                     std::cout << "GainMode: AGC" << std::endl;
                 }
                 else if (GainMode == 1)
                 {
-                    g_Parameter.WB_Params.GainMode = CmdWB.Rf_Param.DataType = 2;
+                    g_Parameter.WB_Params.GainMode = Cmd_Rf.Rf_Param.State = 2;
                     std::cout << "GainMode: MGC" << std::endl;
                 }
                 else
                     continue;
-                CmdWB.SendCXCmd();
                 ReplayCommand.GainMode = GainMode;
             }
             else if (ParamName == "Rf_MGC")
@@ -403,10 +406,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
                 auto MGC = std::stoi(Cmd[i].substr(sizeof("Rf_MGC")));
                 if (MGC > 31 || MGC < 0)
                     continue;
-                CmdWB.Type = 0x26F1;
-                CmdWB.Rf_Param.DataType = 1;
-                CmdWB.Rf_Param.Value = MGC;
-                CmdWB.SendCXCmd();
+                Cmd_Rf.Rf_Param.Value[0] = MGC;
                 std::cout << "GainType: MGC, GainValue: " << MGC << std::endl;
                 g_Parameter.WB_Params.RfGain = MGC;
                 ReplayCommand.Rf_MGC = MGC;
@@ -416,81 +416,100 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
                 auto MGC = std::stoi(Cmd[i].substr(sizeof("Digit_MGC")));
                 if (MGC > 31 || MGC < 0)
                     continue;
-                CmdWB.Type = 0x28F1;
-                CmdWB.Digit_Param.DataType = 1;
-                CmdWB.Digit_Param.Value = MGC;
-                CmdWB.SendCXCmd();
+                Cmd_Digit.Digit_Param.Type = 1;
+                Cmd_Digit.Digit_Param.Value = MGC;
                 std::cout << "GainType: MGC, GainValue: " << MGC << std::endl;
-                g_Parameter.WB_Params.DigitGain = CmdWB.Digit_Param.Value = MGC;
+                g_Parameter.WB_Params.DigitGain = Cmd_Digit.Digit_Param.Value = MGC;
                 ReplayCommand.Digit_MGC = MGC;
             }
             else if (ParamName == "Feedback")
             {
                 auto Feedback = std::stoi(Cmd[i].substr(sizeof("Feedback")));
-                CmdWB.Type = 0x26F1;
-                CmdWB.Digit_Param.DataType = 2;
-                CmdWB.Digit_Param.Value = Feedback;
-                CmdWB.SendCXCmd();
+                Cmd_Feedback.Digit_Param.Value = Feedback;
                 std::cout << "Feedback: " << Feedback << std::endl;
                 g_Parameter.WB_Params.Feedback = Feedback;
             }
         }
     }
+    Cmd_DDC.SendCXCmd();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Cmd_FFT.SendCXCmd();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Cmd_Rf.SendCXCmd();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Cmd_Digit.SendCXCmd();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Cmd_Feedback.SendCXCmd();
 }
 
 void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmd)
 {
-    CmdZC.Type = 0x24F1;
+    StructCmdZC Cmd_DDC, Cmd_Demod;
+    Cmd_DDC.Type = 0x24F1;
+    Cmd_Demod.Type = 0x25F1;
     for (size_t n = Cmd.size(), i = 3; i < n; ++i)
     {
         auto index = Cmd[i].find_first_of(':');
         if (index >= 0)
         {
-            auto ParmName = Cmd[i].substr(0, index);
-            if (ParmName == "BankNum")
+            auto ParamName = Cmd[i].substr(0, index);
+            if (ParamName == "BankNum")
             {
                 auto BankNum = std::stol(Cmd[i].substr(sizeof("BankNum")));
                 if (BankNum < 0 || BankNum > 15)
                     return;
-                g_Parameter.NB_Params.BankNum = CmdZC.Channel = BankNum;
+                g_Parameter.NB_Params.BankNum = Cmd_DDC.DDC_Param.Channel = Cmd_Demod.Demod_Param.Channel_SSB = Cmd_Demod.Demod_Param.Channel_CW = BankNum;
             }
-            else if (ParmName == "Freq")
+            else if (ParamName == "Freq")
             {
                 auto Freq = std::stoull(Cmd[i].substr(sizeof("Freq")));
-                g_Parameter.SetNBWaveResultFrequency(CmdZC.Channel, Freq);
+                g_Parameter.SetNBWaveResultFrequency(Cmd_DDC.DDC_Param.Channel, Freq);
                 unsigned int DDS = std::round(std::pow(2, 23) * (Freq / 1e6) / 3);
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
                 NB_Param.DDS = DDS;
-                CmdZC.DDS = ((DDS & 0xFF) << 24) | ((DDS & 0xFF00) << 8) | ((DDS >> 8) & 0xFF00) | ((DDS >> 24) & 0xFF);
+                Cmd_DDC.DDC_Param.DDS = ((DDS & 0xFF) << 24) | ((DDS & 0xFF00) << 8) | ((DDS >> 8) & 0xFF00) | ((DDS >> 24) & 0xFF);
             }
-            else if (ParmName == "DDCBW")
+            else if (ParamName == "DDCBW")
             {
                 auto DDCBW = std::stol(Cmd[i].substr(sizeof("DDCBW")));
                 unsigned short CIC = 8000;
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
                 switch (DDCBW)
                 {
-                case 150: NB_Param.CIC = CmdZC.CIC = 8000; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 300: NB_Param.CIC = CmdZC.CIC = 4000; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 600: NB_Param.CIC = CmdZC.CIC = 2000; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 1500: NB_Param.CIC = CmdZC.CIC = 800; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 2400: NB_Param.CIC = CmdZC.CIC = 500; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 6000: NB_Param.CIC = CmdZC.CIC = 200; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 9000: NB_Param.CIC = CmdZC.CIC = 133; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 15000: NB_Param.CIC = CmdZC.CIC = 80; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 30000: NB_Param.CIC = CmdZC.CIC = 40; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 50000: NB_Param.CIC = CmdZC.CIC = 24; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 120000: NB_Param.CIC = CmdZC.CIC = 10; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
-                case 150000: NB_Param.CIC = CmdZC.CIC = 8; g_Parameter.SetNBWaveResultBandWidth(CmdZC.Channel, DDCBW); break;
+                case 150: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 8000; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 300: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 4000; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 600: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 2000; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 1500: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 800; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 2400: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 500; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 6000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 200; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 9000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 133; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 15000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 80; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 30000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 40; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 50000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 24; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 120000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 10; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
+                case 150000: NB_Param.CIC = Cmd_DDC.DDC_Param.CIC = 8; g_Parameter.SetNBWaveResultBandWidth(Cmd_DDC.DDC_Param.Channel, DDCBW); break;
                 default: break;
                 }
-                CmdZC.CIC = ((CmdZC.CIC & 0xFF) << 8) | ((CmdZC.CIC >> 8) & 0xFF);
+                unsigned int SSB_DDS = std::round(std::pow(2, 23) * ((DDCBW / 2 + 300) / 1e6) / 3);
+                Cmd_Demod.Demod_Param.SSB_DDS = ((SSB_DDS & 0xFF) << 24) | ((SSB_DDS & 0xFF00) << 8) | ((SSB_DDS >> 8) & 0xFF00) | ((SSB_DDS >> 24) & 0xFF);
+                Cmd_DDC.DDC_Param.CIC = ((Cmd_DDC.DDC_Param.CIC & 0xFF) << 8) | ((Cmd_DDC.DDC_Param.CIC >> 8) & 0xFF);
             }
-            else if (ParmName == "DemodType")
+            else if (ParamName == "DemodType")
             {
-                CmdZC.DemodType = std::stol(Cmd[i].substr(sizeof("DemodType")));
+                auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
+                NB_Param.Demod = Cmd_DDC.DDC_Param.DemodType = std::stol(Cmd[i].substr(sizeof("DemodType")));
+            }
+            else if (ParamName == "CW")
+            {
+                auto CW = std::stoull(Cmd[i].substr(sizeof("CW")));
+                auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
+                unsigned int CW_DDS = std::round(std::pow(2, 22) * (CW / 1e3) / 3);
+                NB_Param.CW_DDS = CW_DDS;
+                Cmd_Demod.Demod_Param.CW_DDS = ((CW_DDS & 0xFF) << 24) | ((CW_DDS & 0xFF00) << 8) | ((CW_DDS >> 8) & 0xFF00) | ((CW_DDS >> 24) & 0xFF);
             }
         }
     }
-    CmdZC.SendZCCmd();
+    Cmd_DDC.SendZCCmd();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Cmd_Demod.SendZCCmd();
 }

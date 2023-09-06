@@ -52,14 +52,15 @@ namespace DBXXH
 
             struct Rf_Param_
             {
-                char DataType;
-                char Value;
-                char Reserved[8];
+                char Type;
+                char State;
+                char Value[4];
+                char Reserved[4];
             } Rf_Param;
 
             struct Digit_Param_
             {
-                char DataType;
+                char Type;
                 char Value;
                 char Reserved[8];
             } Digit_Param;
@@ -79,11 +80,26 @@ namespace DBXXH
     {
         unsigned char Head[6] = { (unsigned char)0xFA, (unsigned char)0xA5, (unsigned char)0xFB, (unsigned char)0xB5, (unsigned char)0xFC, (unsigned char)0xC5 };
         unsigned short Type;
-        unsigned short Channel;
-        unsigned short CIC;
-        unsigned char DemodType;
-        unsigned int DDS;
-        char ButterFly;
+        union
+        {
+            struct DDC_Param_
+            {
+                unsigned short Channel;
+                unsigned short CIC;
+                unsigned char DemodType;
+                unsigned int DDS;
+                char ButterFly;
+            } DDC_Param;
+
+            struct Demod_Param_
+            {
+                unsigned char Channel_SSB;
+                unsigned int SSB_DDS;
+                unsigned char Channel_CW;
+                unsigned int CW_DDS;
+            } Demod_Param;
+        };
+        
         unsigned short Tail = 0x5FF5;
 
         StructCmdZC() {}

@@ -49,6 +49,7 @@ namespace DBXXH
                 unsigned int DDS;
                 unsigned short CIC;
                 unsigned char Demod;
+                unsigned int CW_DDS;
             } NB_Param[ZC_CH_NUM];
         } NB_Params;
         

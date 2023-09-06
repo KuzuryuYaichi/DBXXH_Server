@@ -51,12 +51,15 @@ void DBXXH::DataDealZC(TcpSocket& socket)
 
     auto DataFilter = [&](const DataNB_DDC& recvData)
     {
-        if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= PARAMETER_SET::ZC_CH_NUM)
-            return;
-        auto& NB_Param = g_Parameter.NB_Params.NB_Param[recvData.Params.ChNum];
-        if (NB_Param.DDS != recvData.Params.NBParams.DDS || NB_Param.CIC != recvData.Params.NBParams.CIC || NB_Param.Demod != recvData.Params.Demod)
-            return;
-        ToWaveData(recvData);
+        if (recvData.Params.DataType == 2)
+        {
+            if (recvData.Params.ChNum < 0 || recvData.Params.ChNum >= PARAMETER_SET::ZC_CH_NUM)
+                return;
+            auto& NB_Param = g_Parameter.NB_Params.NB_Param[recvData.Params.ChNum];
+            if (NB_Param.DDS != recvData.Params.NBParams.DDS || NB_Param.CIC != recvData.Params.NBParams.CIC || NB_Param.Demod != recvData.Params.Demod)
+                return;
+            ToWaveData(recvData);
+        }
     };
 
     while (true)

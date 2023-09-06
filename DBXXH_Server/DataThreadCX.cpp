@@ -94,9 +94,12 @@ void DBXXH::DataDealCX(TcpSocket& socket)
     {
         auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
         std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);
-        if (ParamPowerWB.Resolution != recvData.Params.WBParams.Resolution)
-            return;
-        ToPowerWB(recvData);
+        if (recvData.Params.DataType == 3)
+        {
+            if (ParamPowerWB.Resolution != recvData.Params.WBParams.Resolution)
+                return;
+            ToPowerWB(recvData);
+        }
     };
 
     while (true)

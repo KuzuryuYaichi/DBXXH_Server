@@ -37,8 +37,6 @@ namespace DBXXH
 		std::mutex& SessionSetMutex;
 		std::mutex WriteLock;
 		unsigned int TaskValue = 0;
-		StructCmdWB CmdWB;
-		StructCmdZC CmdZC;
 		StructWorkCommandRev ReplayCommand;
 		StructDeviceScheckRev ReplayScheck;
 		size_t TransferByte = 0;

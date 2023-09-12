@@ -38,7 +38,8 @@ namespace DBXXH
             char Resolution = 13;
             char Smooth = 1;
             char Feedback = 0;
-            int NbCenterFreqRF;
+            unsigned long long CenterFreq;
+            unsigned long long Bound;
         } WB_Params;
 
         struct NB_Params_
@@ -56,11 +57,22 @@ namespace DBXXH
 
         std::mutex ParamPowerWBMutex;
         ParamPowerWB m_ParamPowerWB;
-        void SetParamPowerWB(unsigned int Task, long long CenterFreq)
+        void SetParamPowerWB(unsigned int Task, unsigned long long CenterFreq)
         {
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
-            //m_ParamPowerWB.Task = Task;
-            //m_ParamPowerWB.CenterFreq = CenterFreq;
+            unsigned long long HALF_BOUND = 0;
+            switch (WB_Params.Bound)
+            {
+            case 1: HALF_BOUND = 15000000; break;
+            case 2: HALF_BOUND = 7500000; break;
+            case 3: HALF_BOUND = 3750000; break;
+            case 4: HALF_BOUND = 1875000; break;
+            case 5: HALF_BOUND = 937500; break;
+            case 6: HALF_BOUND = 468750; break;
+            default: return;
+            }
+            m_ParamPowerWB.StartFreq = CenterFreq - HALF_BOUND;
+            m_ParamPowerWB.StopFreq = CenterFreq + HALF_BOUND;
 
         }
         void SetParamPowerWB(unsigned int Task, unsigned long Resolution)

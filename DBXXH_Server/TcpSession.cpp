@@ -308,25 +308,27 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             auto ParamName = Cmd[i].substr(0, index);
             if (ParamName == "CenterFreq")
             {
-                auto CenterFreq_MHz = std::stoull(Cmd[i].substr(sizeof("CenterFreq"))) / 1e6;
+                auto CenterFreq_Hz = std::stoull(Cmd[i].substr(sizeof("CenterFreq")));
+                auto CenterFreq_MHz = CenterFreq_Hz / 1e6;
                 Cmd_DDC.WB_DDC_Param.CenterFreq = std::pow(2, 22) * CenterFreq_MHz / 3;
+                g_Parameter.SetParamPowerWB(0, CenterFreq_Hz);
                 std::cout << "CenterFreq: " << CenterFreq_MHz << std::endl;
             }
             else if (ParamName == "SimBW")
             {
                 auto simBW = std::stoi(Cmd[i].substr(sizeof("SimBW")));
                 if (simBW == 1)
-                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 1;
+                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 1;
                 else if (simBW == 2)
-                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 2;
+                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 2;
                 else if (simBW == 3)
-                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 3;
+                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 3;
                 else if (simBW == 4)
-                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 4;
+                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 4;
                 else if (simBW == 5)
-                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 5;
+                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 5;
                 else if (simBW == 6)
-                    g_Parameter.WB_Params.Resolution = Cmd_DDC.WB_DDC_Param.CIC = 6;
+                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 6;
                 else
                     continue;
                 std::cout << "SimulateBandwidth: " << simBW << std::endl;

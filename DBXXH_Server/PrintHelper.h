@@ -63,12 +63,12 @@ namespace DBXXH
             unsigned long long HALF_BOUND = 0;
             switch (WB_Params.Bound)
             {
-            case 1: HALF_BOUND = 15000000; break;
-            case 2: HALF_BOUND = 7500000; break;
-            case 3: HALF_BOUND = 3750000; break;
-            case 4: HALF_BOUND = 1875000; break;
-            case 5: HALF_BOUND = 937500; break;
-            case 6: HALF_BOUND = 468750; break;
+            case 2: HALF_BOUND = 15000000; break;
+            case 4: HALF_BOUND = 7500000; break;
+            case 8: HALF_BOUND = 3750000; break;
+            case 16: HALF_BOUND = 1875000; break;
+            case 32: HALF_BOUND = 937500; break;
+            case 64: HALF_BOUND = 468750; break;
             default: return;
             }
             m_ParamPowerWB.StartFreq = CenterFreq - HALF_BOUND;

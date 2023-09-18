@@ -434,13 +434,13 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
         }
     }
     Cmd_DDC.SendCXCmd();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     Cmd_FFT.SendCXCmd();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     Cmd_Rf.SendCXCmd();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     Cmd_Digit.SendCXCmd();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     Cmd_Feedback.SendCXCmd();
 }
 

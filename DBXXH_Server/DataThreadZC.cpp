@@ -60,6 +60,11 @@ void DBXXH::DataDealZC(TcpSocket& socket)
                 return;
             ToWaveData(recvData);
         }
+        else if (recvData.Params.DataType == 4)
+        {
+            static int ii = 0;
+            ++ii;
+        }
     };
 
     while (true)

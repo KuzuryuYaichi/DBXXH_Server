@@ -74,12 +74,15 @@ namespace DBXXH
     struct StructNBWaveZCResult
     {
         long long StartTime;
-        int NanoSeconds;
+        //int NanoSeconds;
+        unsigned short AM_DataMax;
+        unsigned short AM_DC;
         unsigned long long Frequency = 15 * 1e6; // Hz
         unsigned int BandWidth = 0.15 * 1e6; // Hz
         int Sps;
         char Accuracy = 1; // 0: Byte; 1: Int16; 2: Int32; 3: Float
-        char ChannelNum = 2; // 1:Real; 2: Real-Imagine
+        //char ChannelNum = 2; // 1:Real; 2: Real-Imagine
+        char DataType;
         short DataPoint = 2048; // Default 2048
 
         StructNBWaveZCResult() = default;

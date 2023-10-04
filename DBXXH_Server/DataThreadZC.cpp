@@ -44,6 +44,12 @@ void DBXXH::DataDealZC(TcpSocket& socket)
 
         if (++PackIndex == 8)
         {
+            if (recvData.Params.Demod == 0x01)
+            {
+                NBWaveCXResult.AM_DataMax = recvData.Params.NBParams.AM_Params.AM_DataMax;
+                NBWaveCXResult.AM_DC = recvData.Params.NBParams.AM_Params.AM_DC;
+            }
+            NBWaveCXResult.DataType = recvData.Params.Demod;
             socket.NBZCDataReplay(NBWaveCXResult, res, DataLen, recvData.Params.ChNum);
             PackIndex = 0;
         }

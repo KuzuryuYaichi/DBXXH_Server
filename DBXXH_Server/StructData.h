@@ -66,6 +66,13 @@ struct DataNB_DDC
 	DDC DDCData[LENGTH];
 };
 
+struct DataPulse
+{
+	static constexpr auto LENGTH = 256;
+	CommonParams Params;
+	DDC DDCData[LENGTH];
+};
+
 #pragma pack()
 
 #endif

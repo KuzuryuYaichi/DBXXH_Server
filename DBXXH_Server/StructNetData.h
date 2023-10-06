@@ -71,7 +71,7 @@ namespace DBXXH
         ParamPowerWB& operator=(const ParamPowerWB&) = default;
     };
 
-    struct StructNBWaveZCResult
+    struct StructNBWave
     {
         long long StartTime;
         //int NanoSeconds;
@@ -85,9 +85,9 @@ namespace DBXXH
         char DataType;
         short DataPoint = 2048; // Default 2048
 
-        StructNBWaveZCResult() = default;
-        StructNBWaveZCResult(const StructNBWaveZCResult&) = default;
-        StructNBWaveZCResult& operator=(const StructNBWaveZCResult&) = default;
+        StructNBWave() = default;
+        StructNBWave(const StructNBWave&) = default;
+        StructNBWave& operator=(const StructNBWave&) = default;
 
         void SetNBWaveResultFrequency(unsigned long long Frequency)
         {

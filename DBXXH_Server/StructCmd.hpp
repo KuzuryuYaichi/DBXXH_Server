@@ -70,13 +70,15 @@ namespace DBXXH
 
         StructCmdWB() {}
 
+        StructCmdWB(unsigned short Type): Type(Type) {}
+
         void SendCXCmd()
         {
             WriteStreamCmd((char*)this, sizeof(StructCmdWB), 0);
         }
     };
 
-    struct StructCmdZC
+    struct StructCmdNB
     {
         unsigned char Head[6] = { (unsigned char)0xFA, (unsigned char)0xA5, (unsigned char)0xFB, (unsigned char)0xB5, (unsigned char)0xFC, (unsigned char)0xC5 };
         unsigned short Type;
@@ -102,11 +104,13 @@ namespace DBXXH
         
         unsigned short Tail = 0x5FF5;
 
-        StructCmdZC() {}
+        StructCmdNB() {}
+
+        StructCmdNB(unsigned short Type) : Type(Type) {}
 
         void SendZCCmd()
         {
-            WriteStreamCmd((char*)this, sizeof(StructCmdZC), 0);
+            WriteStreamCmd((char*)this, sizeof(StructCmdNB), 0);
         }
     };
 

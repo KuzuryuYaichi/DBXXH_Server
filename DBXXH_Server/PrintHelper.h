@@ -39,7 +39,7 @@ namespace DBXXH
             char Smooth = 1;
             char Feedback = 0;
             unsigned long long CenterFreq;
-            unsigned long long Bound;
+            unsigned long long Bandwitdh;
         } WB_Params;
 
         struct NB_Params_
@@ -53,26 +53,25 @@ namespace DBXXH
                 unsigned int CW_DDS;
             } NB_Param[ZC_CH_NUM];
         } NB_Params;
-        
 
         std::mutex ParamPowerWBMutex;
         ParamPowerWB m_ParamPowerWB;
         void SetParamPowerWB(unsigned int Task, unsigned long long CenterFreq)
         {
             std::lock_guard<std::mutex> lock(ParamPowerWBMutex);
-            unsigned long long HALF_BOUND = 0;
-            switch (WB_Params.Bound)
+            unsigned long long HALF_BANDWIDTH = 0;
+            switch (WB_Params.Bandwitdh)
             {
-            case 2: HALF_BOUND = 15000000; break;
-            case 4: HALF_BOUND = 7500000; break;
-            case 8: HALF_BOUND = 3750000; break;
-            case 16: HALF_BOUND = 1875000; break;
-            case 32: HALF_BOUND = 937500; break;
-            case 64: HALF_BOUND = 468750; break;
+            case 2: HALF_BANDWIDTH = 15000000; break;
+            case 4: HALF_BANDWIDTH = 7500000; break;
+            case 8: HALF_BANDWIDTH = 3750000; break;
+            case 16: HALF_BANDWIDTH = 1875000; break;
+            case 32: HALF_BANDWIDTH = 937500; break;
+            case 64: HALF_BANDWIDTH = 468750; break;
             default: return;
             }
-            m_ParamPowerWB.StartFreq = CenterFreq - HALF_BOUND;
-            m_ParamPowerWB.StopFreq = CenterFreq + HALF_BOUND;
+            m_ParamPowerWB.StartFreq = CenterFreq - HALF_BANDWIDTH;
+            m_ParamPowerWB.StopFreq = CenterFreq + HALF_BANDWIDTH;
 
         }
         void SetParamPowerWB(unsigned int Task, unsigned long Resolution)
@@ -91,20 +90,20 @@ namespace DBXXH
         }
 
         std::mutex NBWaveMutex;
-        StructNBWaveZCResult m_NBWaveZCResult[ZC_CH_NUM];
+        StructNBWave m_NBWave[ZC_CH_NUM];
         void SetNBWaveResultFrequency(int ChNum, unsigned long long Frequency)
         {
             if (ChNum < 0 || ChNum >= ZC_CH_NUM)
                 return;
             std::lock_guard<std::mutex> lock(NBWaveMutex);
-            m_NBWaveZCResult[ChNum].SetNBWaveResultFrequency(Frequency);
+            m_NBWave[ChNum].SetNBWaveResultFrequency(Frequency);
         }
         void SetNBWaveResultBandWidth(int ChNum, unsigned int BandWidth)
         {
             if (ChNum < 0 || ChNum >= ZC_CH_NUM)
                 return;
             std::lock_guard<std::mutex> lock(NBWaveMutex);
-            m_NBWaveZCResult[ChNum].SetNBWaveResultBandWidth(BandWidth);
+            m_NBWave[ChNum].SetNBWaveResultBandWidth(BandWidth);
         }
     };
 

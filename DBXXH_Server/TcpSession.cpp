@@ -197,14 +197,14 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
         ControlReplay(TaskValue, 0, 1);
         return;
     }
-    if (Cmd[2].find_first_of("Type:") != 0)
+    if (Cmd[1].find_first_of("Type:") != 0)
         return;
-    short TypeValue = std::stoul(Cmd[2].substr(sizeof("Type")), 0, 16);
+    short TypeValue = std::stoul(Cmd[1].substr(sizeof("Type")), 0, 16);
     switch (TypeValue)
     {
     case 0x0101:
     {
-        if (Cmd[3].find_first_of("Scheck:") == 0)
+        if (Cmd[2].find_first_of("Scheck:") == 0)
         {
             ControlReplay(TaskValue, 1, 0);
             std::cout << "Type: SelfCheck, Val: Dev State SelfCheck, State: SelfChecking" << std::endl;
@@ -214,7 +214,7 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
     }
     case 0x0102:
     {
-        if (Cmd[3].find_first_of("WorkCtrl:") == 0)
+        if (Cmd[2].find_first_of("WorkCtrl:") == 0)
         {
             short WorkCtrlValue = std::stoul(Cmd[3].substr(sizeof("WorkCtrl")));
             switch (WorkCtrlValue)
@@ -239,7 +239,6 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
             case 2:
             {
                 std::cout << "Type: WorkCtrl, Val: Reset, State: Resetting" << std::endl;
-                //initWorkCommandRev();
                 ControlReplay(TaskValue, 1, 0);
                 std::cout << "State: Resetted" << std::endl;
                 break;
@@ -257,9 +256,6 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
     {
         SetCmdWBParams(Cmd);
         std::cout << "Type: WorkParam Set, Val: CX Param Set, State: Setting" << std::endl;
-        //g_Parameter.SetFixedCXResult(TaskValue, (unsigned int)CmdWB.FFT_Param.DataPoints);
-        //g_Parameter.SetSweepCXResult(TaskValue, (unsigned int)CmdWB.FFT_Param.DataPoints);
-        //g_Parameter.SetTestCXResult(TaskValue, (unsigned int)CmdWB.FFT_Param.DataPoints);
         ControlReplay(TaskValue, 1, 0);
         ReplayCommand.Task = TaskValue;
         WorkParmReplay(ReplayCommand);
@@ -288,27 +284,21 @@ void DBXXH::TcpSession::SelfCheck()
     std::memset(CmdWB.SelfCheck.Reserved, 0, sizeof(CmdWB.SelfCheck.Reserved));
 }
 
-void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
+void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmds)
 {
-    StructCmdWB Cmd_DDC, Cmd_FFT, Cmd_Rf, Cmd_Digit, Cmd_Feedback, Cmd_SelfCheck;
-    Cmd_DDC.Type = 0x23F1;
-    Cmd_FFT.Type = 0x22F1;
-    Cmd_Rf.Type = 0x26F1;
+    StructCmdWB Cmd_DDC(0x23F1), Cmd_FFT(0x22F1), Cmd_Rf(0x26F1), Cmd_Digit(0x27F1), Cmd_Feedback(0x26F1), Cmd_SelfCheck(0x26F1);
     Cmd_Rf.Rf_Param.Type = 1;
-    Cmd_Digit.Type = 0x27F1;
-    Cmd_Feedback.Type = 0x26F1;
     Cmd_Feedback.Rf_Param.Type = 2;
-    Cmd_SelfCheck.Type = 0x26F1;
     Cmd_SelfCheck.Rf_Param.Type = 3;
-    for (size_t n = Cmd.size(), i = 3; i < n; ++i)
+    for (auto& Cmd: Cmds)
     {
-        auto index = Cmd[i].find_first_of(':');
+        auto index = Cmd.find_first_of(':');
         if (index >= 0)
         {
-            auto ParamName = Cmd[i].substr(0, index);
+            auto ParamName = Cmd.substr(0, index);
             if (ParamName == "CenterFreq")
             {
-                auto CenterFreq_Hz = std::stoull(Cmd[i].substr(sizeof("CenterFreq")));
+                auto CenterFreq_Hz = std::stoull(Cmd.substr(sizeof("CenterFreq")));
                 auto CenterFreq_MHz = CenterFreq_Hz / 1e6;
                 Cmd_DDC.WB_DDC_Param.CenterFreq = std::pow(2, 22) * CenterFreq_MHz / 3;
                 g_Parameter.SetParamPowerWB(0, CenterFreq_Hz);
@@ -316,19 +306,19 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "SimBW")
             {
-                auto simBW = std::stoi(Cmd[i].substr(sizeof("SimBW")));
+                auto simBW = std::stoi(Cmd.substr(sizeof("SimBW")));
                 if (simBW == 2)
-                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 2;
+                    g_Parameter.WB_Params.Bandwitdh = Cmd_DDC.WB_DDC_Param.CIC = 2;
                 else if (simBW == 4)
-                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 4;
+                    g_Parameter.WB_Params.Bandwitdh = Cmd_DDC.WB_DDC_Param.CIC = 4;
                 else if (simBW == 8)
-                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 8;
+                    g_Parameter.WB_Params.Bandwitdh = Cmd_DDC.WB_DDC_Param.CIC = 8;
                 else if (simBW == 16)
-                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 16;
+                    g_Parameter.WB_Params.Bandwitdh = Cmd_DDC.WB_DDC_Param.CIC = 16;
                 else if (simBW == 32)
-                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 32;
+                    g_Parameter.WB_Params.Bandwitdh = Cmd_DDC.WB_DDC_Param.CIC = 32;
                 else if (simBW == 64)
-                    g_Parameter.WB_Params.Bound = Cmd_DDC.WB_DDC_Param.CIC = 64;
+                    g_Parameter.WB_Params.Bandwitdh = Cmd_DDC.WB_DDC_Param.CIC = 64;
                 else
                     continue;
                 std::cout << "SimulateBandwidth: " << simBW << std::endl;
@@ -336,7 +326,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "FreqRes")
             {
-                auto FreqResValue = std::stoul(Cmd[i].substr(sizeof("FreqRes")));
+                auto FreqResValue = std::stoul(Cmd.substr(sizeof("FreqRes")));
                 if (FreqResValue == 0x0E)
                     g_Parameter.WB_Params.Resolution = Cmd_FFT.FFT_Param.DataPoints = 0x0E;
                 else if (FreqResValue == 0x0D)
@@ -355,7 +345,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "SmNum")
             {
-                auto SmNumValue = std::stoi(Cmd[i].substr(sizeof("SmNum")));
+                auto SmNumValue = std::stoi(Cmd.substr(sizeof("SmNum")));
                 if (SmNumValue == 1)
                 {
                     g_Parameter.WB_Params.Smooth = Cmd_FFT.FFT_Param.Smooth = 1; Cmd_FFT.FFT_Param.SmoothLog = 0;
@@ -383,12 +373,12 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
                 else
                     continue;
                 Cmd_FFT.FFT_Param.PlaceHolder_ = 0;
-                std::cout << "SmoothTime: " << Cmd_FFT.FFT_Param.Smooth;
+                std::cout << "SmoothTime: " << (int)Cmd_FFT.FFT_Param.Smooth << std::endl;
                 ReplayCommand.SmNum = Cmd_FFT.FFT_Param.Smooth;
             }
             else if (ParamName == "GainMode")
             {
-                auto GainMode = std::stoi(Cmd[i].substr(sizeof("GainMode")));
+                auto GainMode = std::stoi(Cmd.substr(sizeof("GainMode")));
                 if (GainMode == 0)
                 {
                     g_Parameter.WB_Params.GainMode = Cmd_Rf.Rf_Param.State = 1;
@@ -405,7 +395,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "Rf_MGC")
             {
-                auto MGC = std::stoi(Cmd[i].substr(sizeof("Rf_MGC")));
+                auto MGC = std::stoi(Cmd.substr(sizeof("Rf_MGC")));
                 if (MGC > 31 || MGC < 0)
                     continue;
                 Cmd_Rf.Rf_Param.Value[0] = MGC;
@@ -415,7 +405,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "Digit_MGC")
             {
-                auto MGC = std::stoi(Cmd[i].substr(sizeof("Digit_MGC")));
+                auto MGC = std::stoi(Cmd.substr(sizeof("Digit_MGC")));
                 if (MGC > 31 || MGC < 0)
                     continue;
                 Cmd_Digit.Digit_Param.Type = 1;
@@ -426,7 +416,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
             }
             else if (ParamName == "Feedback")
             {
-                auto Feedback = std::stoi(Cmd[i].substr(sizeof("Feedback")));
+                auto Feedback = std::stoi(Cmd.substr(sizeof("Feedback")));
                 Cmd_Feedback.Digit_Param.Value = Feedback;
                 std::cout << "Feedback: " << Feedback << std::endl;
                 g_Parameter.WB_Params.Feedback = Feedback;
@@ -444,36 +434,39 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmd)
     Cmd_Feedback.SendCXCmd();
 }
 
-void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmd)
+void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmds)
 {
-    StructCmdZC Cmd_DDC, Cmd_Demod;
-    Cmd_DDC.Type = 0x24F1;
-    Cmd_Demod.Type = 0x25F1;
-    for (size_t n = Cmd.size(), i = 3; i < n; ++i)
+    StructCmdNB Cmd_DDC(0x24F1), Cmd_Demod(0x25F1);
+    for (auto& Cmd: Cmds)
     {
-        auto index = Cmd[i].find_first_of(':');
+        auto index = Cmd.find_first_of(':');
         if (index >= 0)
         {
-            auto ParamName = Cmd[i].substr(0, index);
+            auto ParamName = Cmd.substr(0, index);
             if (ParamName == "BankNum")
             {
-                auto BankNum = std::stol(Cmd[i].substr(sizeof("BankNum")));
+                auto BankNum = std::stol(Cmd.substr(sizeof("BankNum")));
                 if (BankNum < 0 || BankNum > 15)
                     return;
                 g_Parameter.NB_Params.BankNum = Cmd_DDC.DDC_Param.Channel = Cmd_Demod.Demod_Param.Channel_SSB = Cmd_Demod.Demod_Param.Channel_CW = BankNum;
             }
             else if (ParamName == "Freq")
             {
-                auto Freq = std::stoull(Cmd[i].substr(sizeof("Freq")));
+                auto Freq = std::stoull(Cmd.substr(sizeof("Freq")));
                 g_Parameter.SetNBWaveResultFrequency(Cmd_DDC.DDC_Param.Channel, Freq);
-                unsigned int DDS = std::round(std::pow(2, 23) * (Freq / 1e6) / 3);
+                auto& NB_ZC = g_Parameter.m_NBWave[g_Parameter.NB_Params.BankNum];
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
+                if (NB_Param.Demod == 4)
+                    Freq += NB_ZC.BandWidth / 2 + 300;
+                else if (NB_Param.Demod == 5)
+                    Freq -= NB_ZC.BandWidth / 2 + 300;
+                unsigned int DDS = std::round(std::pow(2, 23) * (Freq / 1e6) / 3);
                 NB_Param.DDS = DDS;
                 Cmd_DDC.DDC_Param.DDS = ((DDS & 0xFF) << 24) | ((DDS & 0xFF00) << 8) | ((DDS >> 8) & 0xFF00) | ((DDS >> 24) & 0xFF);
             }
             else if (ParamName == "DDCBW")
             {
-                auto DDCBW = std::stol(Cmd[i].substr(sizeof("DDCBW")));
+                auto DDCBW = std::stol(Cmd.substr(sizeof("DDCBW")));
                 unsigned short CIC = 8000;
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
                 switch (DDCBW)
@@ -499,11 +492,11 @@ void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmd)
             else if (ParamName == "DemodType")
             {
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
-                NB_Param.Demod = Cmd_DDC.DDC_Param.DemodType = std::stol(Cmd[i].substr(sizeof("DemodType")));
+                NB_Param.Demod = Cmd_DDC.DDC_Param.DemodType = std::stol(Cmd.substr(sizeof("DemodType")));
             }
             else if (ParamName == "CW")
             {
-                auto CW = std::stoull(Cmd[i].substr(sizeof("CW")));
+                auto CW = std::stoull(Cmd.substr(sizeof("CW")));
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
                 unsigned int CW_DDS = std::round(std::pow(2, 22) * (CW / 1e3) / 3);
                 NB_Param.CW_DDS = CW_DDS;

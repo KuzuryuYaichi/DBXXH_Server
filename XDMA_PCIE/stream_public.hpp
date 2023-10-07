@@ -29,7 +29,7 @@ void ReadThread(xdma_device& dev, P_CXDATA_CALLBACK& CallBackCX, P_ZCDATA_CALLBA
         while (isRunning)
         {
             size_t bytes_remaining = BLOCK_LEN;
-            auto ptr = std::make_unique<Struct_Datas<DataWB_FFT>>(PACK_NUM);
+            auto ptr = std::make_unique<Struct_Datas<DataWB_Data>>(PACK_NUM);
             auto buffer = (char*)ptr->ptr;
             try
             {
@@ -59,7 +59,7 @@ void ReadThread(xdma_device& dev, P_CXDATA_CALLBACK& CallBackCX, P_ZCDATA_CALLBA
         while (isRunning)
         {
             size_t bytes_remaining = BLOCK_LEN;
-            auto ptr = std::make_unique<Struct_Datas<DataNB_DDC>>(PACK_NUM);
+            auto ptr = std::make_unique<Struct_Datas<DataNB_Data>>(PACK_NUM);
             auto buffer = (char*)ptr->ptr;
             try
             {
@@ -85,8 +85,8 @@ void ReadThread(xdma_device& dev, P_CXDATA_CALLBACK& CallBackCX, P_ZCDATA_CALLBA
     };
     try
     {
-        CX_Thread = std::thread(ThreadProcDataCX, 0, sizeof(DataWB_FFT), 1);
-        ZC_Thread = std::thread(ThreadProcDataZC, 1, sizeof(DataNB_DDC), 1);
+        CX_Thread = std::thread(ThreadProcDataCX, 0, sizeof(DataWB_Data), 1);
+        ZC_Thread = std::thread(ThreadProcDataZC, 1, sizeof(DataNB_Data), 1);
     }
     catch (const std::exception& e)
     {

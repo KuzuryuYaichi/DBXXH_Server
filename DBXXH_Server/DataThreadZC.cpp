@@ -6,9 +6,9 @@
 #include "DataThread.h"
 #include "PrintHelper.h"
 
-extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataNB_DDC>>> tsqueueZCs;
+extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataNB_Data>>> tsqueueZCs;
 
-void DBXXH::TcpSocket::NBZCDataReplay(const StructNBWave& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned char Channel)
+void DBXXH::TcpSocket::NBDataReplay(const StructNBWave& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned char Channel)
 {
     DataHeadToByte(0x0602, Datalen, res->data, Channel);
     *(StructNBWave*)(res->data + sizeof(DataHead)) = ReplayParm;
@@ -16,16 +16,23 @@ void DBXXH::TcpSocket::NBZCDataReplay(const StructNBWave& ReplayParm, const std:
     SendMsg(res);
 }
 
+void DBXXH::TcpSocket::PulseDataReplay(const std::unique_ptr<StructNetData>& res, size_t Datalen)
+{
+    DataHeadToByte(0x0605, Datalen, res->data);
+    DataEndToByte(res->data + Datalen - sizeof(DataEnd));
+    SendMsg(res);
+}
+
 void DBXXH::DataDealZC(TcpSocket& socket)
 {
-    auto ToWaveData = [&](const DataNB_DDC& recvData)
+    auto ToWaveData = [&](const DataNB_Data& recvData)
     {
         static unsigned char PackIndexAll[PARAMETER_SET::ZC_CH_NUM] = { 0 };
         static std::unique_ptr<StructNetData> resAll[PARAMETER_SET::ZC_CH_NUM] = { nullptr };
 
         auto& PackIndex = PackIndexAll[recvData.Params.ChNum];
         auto& res = resAll[recvData.Params.ChNum];
-        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWave) + PARAMETER_SET::ZC_CH_NUM * sizeof(DataNB_DDC::DDCData) + sizeof(DataEnd);
+        const auto DataLen = sizeof(DataHead) + sizeof(StructNBWave) + PARAMETER_SET::ZC_CH_NUM * sizeof(DataNB_Data::DDCData) + sizeof(DataEnd);
 
         if (PackIndex == 0 || res == nullptr)
         {
@@ -33,9 +40,9 @@ void DBXXH::DataDealZC(TcpSocket& socket)
         }
 
         auto& NBWaveCXResult = g_Parameter.m_NBWave[recvData.Params.ChNum];
-        const auto LENGTH = recvData.LENGTH;
+        const auto LENGTH = recvData.DDC_LENGTH;
         auto Data = recvData.DDCData;
-        const auto DataBase = (DDC*)(res->data + sizeof(DataHead) + sizeof(StructNBWave) + PackIndex * sizeof(DataNB_DDC::DDCData));
+        const auto DataBase = (DDC*)(res->data + sizeof(DataHead) + sizeof(StructNBWave) + PackIndex * sizeof(DataNB_Data::DDCData));
 
         for (int p = 0; p < LENGTH; ++p)
         {
@@ -44,18 +51,46 @@ void DBXXH::DataDealZC(TcpSocket& socket)
 
         if (++PackIndex == 8)
         {
+            PackIndex = 0;
             if (recvData.Params.Demod == 0x01)
             {
                 NBWaveCXResult.AM_DataMax = recvData.Params.NBParams.AM_Params.AM_DataMax;
                 NBWaveCXResult.AM_DC = recvData.Params.NBParams.AM_Params.AM_DC;
             }
             NBWaveCXResult.DataType = recvData.Params.Demod;
-            socket.NBZCDataReplay(NBWaveCXResult, res, DataLen, recvData.Params.ChNum);
-            PackIndex = 0;
+            socket.NBDataReplay(NBWaveCXResult, res, DataLen, recvData.Params.ChNum);
         }
     };
 
-    auto DataFilter = [&](const DataNB_DDC& recvData)
+    auto ToPulseData = [&](const DataNB_Data& recvData)
+    {
+        static unsigned char PackIndex = 0;
+        static std::unique_ptr<StructNetData> res = nullptr;
+
+        const auto LENGTH = recvData.PULSE_LENGTH;
+        auto Data = recvData.PulseData;
+
+        const auto DataLen = sizeof(DataHead) + PARAMETER_SET::ZC_CH_NUM * sizeof(DataNB_Data::PulseData) + sizeof(DataEnd);
+        const auto DataBase = (Pulse*)(res->data + sizeof(DataHead) + PackIndex * sizeof(DataNB_Data::PulseData));
+
+        if (PackIndex == 0 || res == nullptr)
+        {
+            res = std::make_unique<StructNetData>(0, DataLen);
+        }
+
+        for (int p = 0; p < LENGTH; ++p)
+        {
+            DataBase[p] = Data[p];
+        }
+
+        if (++PackIndex == 8)
+        {
+            PackIndex = 0;
+            socket.PulseDataReplay(res, DataLen);
+        }
+    };
+
+    auto DataFilter = [&](const DataNB_Data& recvData)
     {
         if (recvData.Params.DataType == 2)
         {
@@ -68,8 +103,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
         }
         else if (recvData.Params.DataType == 4)
         {
-            static int ii = 0;
-            ++ii;
+            ToPulseData(recvData);
         }
     };
 

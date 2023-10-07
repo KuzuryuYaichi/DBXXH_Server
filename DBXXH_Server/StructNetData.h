@@ -59,7 +59,7 @@ namespace DBXXH
     {
         long long Time; // 开始时间	INT64	8		本功率谱数据对应时域样点的首样点时刻，高精度时间格式，见2.1.2.1节
         int Resolution = 0x0E; // 频率分辨率	FLOAT	4	KHz
-        int DataPoint = DataWB_FFT::LENGTH + 1; // FFT点数 	INT32	4		FFT长度
+        int DataPoint = DataWB_Data::LENGTH + 1; // FFT点数 	INT32	4		FFT长度
         int SamplePoint; // 数据样点数 	INT32	4		FFT处理的数据样点数
         short Window; // 窗函数类型 	INT16	2		见B.26
         long long StartFreq = 0; // 起始频率	INT64	8	Hz

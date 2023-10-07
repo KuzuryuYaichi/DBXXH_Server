@@ -139,7 +139,6 @@
     <ClInclude Include="dllImport.h" />
     <ClInclude Include="global.h" />
     <ClInclude Include="PrintHelper.h" />
-    <ClInclude Include="SerialPortSession.h" />
     <ClInclude Include="SingletonHolder.hpp" />
     <ClInclude Include="StructCmd.hpp" />
     <ClInclude Include="StructData.h" />
@@ -157,7 +156,6 @@
     <ClCompile Include="dllImport.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PrintHelper.cpp" />
-    <ClCompile Include="SerialPortSession.cpp" />
     <ClCompile Include="StructNetData.cpp" />
     <ClCompile Include="TcpSession.cpp" />
     <ClCompile Include="TcpSocket.cpp" />

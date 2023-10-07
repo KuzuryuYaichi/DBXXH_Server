@@ -4,7 +4,6 @@
 #include "TcpSocket.h"
 #include "TinyConfig.h"
 #include "boost/asio.hpp"
-#include "SerialPortSession.h"
 
 namespace DBXXH
 {
@@ -17,7 +16,6 @@ namespace DBXXH
     private:
         TinyConfig tinyConfig;
         TcpSocket ServerSocket;
-        SerialPortSession SerialPort;
 
         std::thread DataThreadCX;
         std::thread DataThreadZC;

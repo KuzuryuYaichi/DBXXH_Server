@@ -6,9 +6,9 @@
 #include "DataThread.h"
 #include "PrintHelper.h"
 
-extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataWB_FFT>>> tsqueueCXs;
+extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataWB_Data>>> tsqueueCXs;
 
-void DBXXH::TcpSocket::PowerWBDataReplay(const ParamPowerWB& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned short PackNum)
+void DBXXH::TcpSocket::WBDataReplay(const ParamPowerWB& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned short PackNum)
 {
     DataHeadToByte(0x0515, Datalen, res->data, PackNum);
     *(ParamPowerWB*)(res->data + sizeof(DataHead)) = ReplayParm;
@@ -68,7 +68,7 @@ long long DBXXH::timeConvert(unsigned long long t)
 
 void DBXXH::DataDealCX(TcpSocket& socket)
 {
-    auto ToPowerWB = [&](const DataWB_FFT& recvData)
+    auto ToPowerWB = [&](const DataWB_Data& recvData)
     {
         auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
         const auto PerDataLen = sizeof(char) * ParamPowerWB.DataPoint,
@@ -85,12 +85,12 @@ void DBXXH::DataDealCX(TcpSocket& socket)
                 Range[p] = std::max(Data[p] / 10 + 68, 0);
             }
             Range[LENGTH] = Range[LENGTH - 1];
-            socket.PowerWBDataReplay(ParamPowerWB, res, Datalen, 0);
+            socket.WBDataReplay(ParamPowerWB, res, Datalen, 0);
             Data += LENGTH;
         }
     };
 
-    auto DataFilter = [&](const DataWB_FFT& recvData)
+    auto DataFilter = [&](const DataWB_Data& recvData)
     {
         auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
         std::lock_guard<std::mutex> lk(g_Parameter.ParamPowerWBMutex);

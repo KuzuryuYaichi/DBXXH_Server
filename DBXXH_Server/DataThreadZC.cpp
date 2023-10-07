@@ -66,18 +66,16 @@ void DBXXH::DataDealZC(TcpSocket& socket)
     {
         static unsigned char PackIndex = 0;
         static std::unique_ptr<StructNetData> res = nullptr;
-
         const auto LENGTH = recvData.PULSE_LENGTH;
         auto Data = recvData.PulseData;
-
         const auto DataLen = sizeof(DataHead) + PARAMETER_SET::ZC_CH_NUM * sizeof(DataNB_Data::PulseData) + sizeof(DataEnd);
-        const auto DataBase = (Pulse*)(res->data + sizeof(DataHead) + PackIndex * sizeof(DataNB_Data::PulseData));
 
         if (PackIndex == 0 || res == nullptr)
         {
             res = std::make_unique<StructNetData>(0, DataLen);
         }
 
+        const auto DataBase = (Pulse*)(res->data + sizeof(DataHead) + PackIndex * sizeof(DataNB_Data::PulseData));
         for (int p = 0; p < LENGTH; ++p)
         {
             DataBase[p] = Data[p];

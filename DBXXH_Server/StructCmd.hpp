@@ -24,14 +24,14 @@ namespace DBXXH
                 char Reserved[8];
             } SelfCheck;
 
-            struct PulseDemodeParam_
+            struct Pulse_Param_
             {
                 unsigned short Channel;
-                unsigned short Ctrl;
                 unsigned short Gate;
-                unsigned short PulseWidthDepress;
-                unsigned short PulseRangeDepress;
-            } PulseDemodeParam;
+                unsigned short WidthDepress;
+                unsigned short AmplDepress;
+                char Reserved[2];
+            } Pulse_Param;
 
             struct FFT_Param_
             {
@@ -90,7 +90,7 @@ namespace DBXXH
                 unsigned short CIC;
                 unsigned char DemodType;
                 unsigned int DDS;
-                char ButterFly;
+                char ButterFly = 0x1F;
             } DDC_Param;
 
             struct Demod_Param_
@@ -100,6 +100,13 @@ namespace DBXXH
                 unsigned char Channel_CW;
                 unsigned int CW_DDS;
             } Demod_Param;
+
+            struct PSK_Params_
+            {
+                unsigned char Channel;
+                unsigned char PSK_Rate;
+                unsigned char Reserved[8];
+            } PSK_Params;
         };
         
         unsigned short Tail = 0x5FF5;

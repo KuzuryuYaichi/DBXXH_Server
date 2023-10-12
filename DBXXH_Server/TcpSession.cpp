@@ -436,7 +436,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmds)
 
 void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmds)
 {
-    StructCmdNB Cmd_DDC(0x24F1), Cmd_Demod(0x25F1);
+    StructCmdNB Cmd_DDC(0x24F1), Cmd_Demod(0x25F1), Cmd_PSK(0x28F1);
     for (auto& Cmd: Cmds)
     {
         auto index = Cmd.find_first_of(':');
@@ -446,9 +446,9 @@ void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmds)
             if (ParamName == "BankNum")
             {
                 auto BankNum = std::stol(Cmd.substr(sizeof("BankNum")));
-                if (BankNum < 0 || BankNum > 15)
+                if (BankNum < 0 || BankNum > 7)
                     return;
-                g_Parameter.NB_Params.BankNum = Cmd_DDC.DDC_Param.Channel = Cmd_Demod.Demod_Param.Channel_SSB = Cmd_Demod.Demod_Param.Channel_CW = BankNum;
+                g_Parameter.NB_Params.BankNum = Cmd_DDC.DDC_Param.Channel = Cmd_Demod.Demod_Param.Channel_SSB = Cmd_Demod.Demod_Param.Channel_CW = Cmd_PSK.PSK_Params.Channel = BankNum;
             }
             else if (ParamName == "Freq")
             {
@@ -498,13 +498,21 @@ void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmds)
             {
                 auto CW = std::stoull(Cmd.substr(sizeof("CW")));
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
-                unsigned int CW_DDS = std::round(std::pow(2, 22) * (CW / 1e3) / 3);
+                unsigned int CW_DDS = std::round(std::pow(2, 22) * (CW / 1e6) / 3);
                 NB_Param.CW_DDS = CW_DDS;
                 Cmd_Demod.Demod_Param.CW_DDS = ((CW_DDS & 0xFF) << 24) | ((CW_DDS & 0xFF00) << 8) | ((CW_DDS >> 8) & 0xFF00) | ((CW_DDS >> 24) & 0xFF);
+            }
+            else if (ParamName == "PSK")
+            {
+                auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
+                auto PSK_Rate = std::stoul(Cmd.substr(sizeof("PSK")));
+                Cmd_PSK.PSK_Params.PSK_Rate = 3 * 1e6 / (PSK_Rate * NB_Param.CIC);
             }
         }
     }
     Cmd_DDC.SendZCCmd();
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
     Cmd_Demod.SendZCCmd();
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    Cmd_PSK.SendZCCmd();
 }

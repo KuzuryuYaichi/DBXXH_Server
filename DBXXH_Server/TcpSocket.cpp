@@ -35,7 +35,7 @@ void DBXXH::TcpSocket::async_accept()
     }
 }
 
-DBXXH::TcpSocket::TcpSocket(const std::string& ip, const unsigned short& port): m_acceptor(ioService, { boost::asio::ip::tcp::v4(), 5021}), m_socket(ioService)
+DBXXH::TcpSocket::TcpSocket(const std::string& ip, const unsigned short& port): m_acceptor(ioService, { boost::asio::ip::address_v4::from_string("192.168.1.15"), 5021}), m_socket(ioService)
 {
     m_acceptor.listen(MAX_CONNECTIONS);
     async_accept();

@@ -11,6 +11,9 @@ DBXXH::TinyInstance::TinyInstance(): tinyConfig(CONFIG_FILE),
     DataThreadCX(DataDealCX, std::ref(ServerSocket)), DataThreadZC(DataDealZC, std::ref(ServerSocket))
 {
     InitThread();
+    StructCmdWB PulseDetect(0x21F1);
+    PulseDetect.Pulse_Param.Gate = 0b0011 << 12 | 0x3080;
+    PulseDetect.SendCXCmd();
     ServerSocket.Run();
 }
 

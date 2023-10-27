@@ -437,6 +437,7 @@ void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmds)
 void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmds)
 {
     StructCmdNB Cmd_DDC(0x24F1), Cmd_Demod(0x25F1), Cmd_PSK(0x28F1);
+    Cmd_DDC.DDC_Param.ButterFly = 0x23;
     for (auto& Cmd: Cmds)
     {
         auto index = Cmd.find_first_of(':');

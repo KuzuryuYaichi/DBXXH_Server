@@ -82,7 +82,7 @@ void DBXXH::DataDealCX(TcpSocket& socket)
             auto Range = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
             for (int p = 0; p < LENGTH; ++p)
             {
-                Range[p] = std::max(Data[p] / 10 + 68, 0);
+                Range[p] = std::max(Data[p] / 10 + 68 - 14 + recvData.Params.WBParams.GainVal, 0);
             }
             Range[LENGTH] = Range[LENGTH - 1];
             socket.WBDataReplay(ParamPowerWB, res, Datalen, 0);

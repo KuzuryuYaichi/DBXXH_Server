@@ -17,8 +17,8 @@ namespace DBXXH
         TinyConfig tinyConfig;
         TcpSocket ServerSocket;
 
-        std::thread DataThreadCX;
-        std::thread DataThreadZC;
+        std::thread DataThreadWB;
+        std::thread DataThreadNB;
 
         void InitThread();
     };

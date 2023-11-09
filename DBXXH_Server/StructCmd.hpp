@@ -90,7 +90,7 @@ namespace DBXXH
                 unsigned short CIC;
                 unsigned char DemodType;
                 unsigned int DDS;
-                char ButterFly = 0x22;
+                char ButterFly = 0x23;
             } DDC_Param;
 
             struct Demod_Param_

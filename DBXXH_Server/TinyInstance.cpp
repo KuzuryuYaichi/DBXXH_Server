@@ -8,7 +8,7 @@ constexpr char CONFIG_FILE[] = "config.ini";
 
 DBXXH::TinyInstance::TinyInstance(): tinyConfig(CONFIG_FILE),
     ServerSocket(tinyConfig.Get_LocalIP(), tinyConfig.Get_DataPort()),
-    DataThreadCX(DataDealCX, std::ref(ServerSocket)), DataThreadZC(DataDealZC, std::ref(ServerSocket))
+    DataThreadWB(DataDealWB, std::ref(ServerSocket)), DataThreadNB(DataDealNB, std::ref(ServerSocket))
 {
     InitThread();
     StructCmdWB PulseDetect(0x21F1);
@@ -19,10 +19,10 @@ DBXXH::TinyInstance::TinyInstance(): tinyConfig(CONFIG_FILE),
 
 void DBXXH::TinyInstance::join()
 {
-    if (DataThreadCX.joinable())
-        DataThreadCX.join();
-    if (DataThreadZC.joinable())
-        DataThreadZC.join();
+    if (DataThreadWB.joinable())
+        DataThreadWB.join();
+    if (DataThreadNB.joinable())
+        DataThreadNB.join();
 }
 
 void DBXXH::TinyInstance::InitThread()

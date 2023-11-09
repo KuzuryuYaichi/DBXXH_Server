@@ -21,8 +21,10 @@ struct CommonParams
 			unsigned char Smooth; //1	宽带FFT平滑次数	0x04、0x08、0x10、0x20、0x40对应于4、8、16、32、64次平滑
 			unsigned char SimBand; //1	放大倍数	默认0x02    0x02 - 0x40
 			unsigned int DDS; //1	DDS中心频点	默认15M 即0x01400000
-			char GainVal;
-			unsigned char Reserved[5]; // 7 20 - 32	13	补零
+			char RfGainVal;
+			char DigitGainVal;
+			char RefStatus;
+			unsigned char Reserved[3]; // 7 20 - 32	13	补零
 		} WBParams;
 		struct NBParams_
 		{

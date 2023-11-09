@@ -6,7 +6,7 @@
 #include "DataThread.h"
 #include "PrintHelper.h"
 
-extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataNB_Data>>> tsqueueZCs;
+extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataNB_Data>>> tsqueueNBs;
 
 void DBXXH::TcpSocket::NBDataReplay(const StructNBWave& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned char Channel)
 {
@@ -23,7 +23,7 @@ void DBXXH::TcpSocket::PulseDataReplay(const std::unique_ptr<StructNetData>& res
     SendMsg(res);
 }
 
-void DBXXH::DataDealZC(TcpSocket& socket)
+void DBXXH::DataDealNB(TcpSocket& socket)
 {
     auto ToWaveData = [&](const DataNB_Data& recvData)
     {
@@ -107,7 +107,7 @@ void DBXXH::DataDealZC(TcpSocket& socket)
 
     while (true)
     {
-        auto ptr = tsqueueZCs.wait_and_pop();
+        auto ptr = tsqueueNBs.wait_and_pop();
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
             if (ptr->ptr[i].Params.Head == 0xABCD1234)

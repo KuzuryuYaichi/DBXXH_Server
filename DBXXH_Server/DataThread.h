@@ -5,8 +5,8 @@
 
 namespace DBXXH
 {
-	void DataDealCX(TcpSocket&);
-	void DataDealZC(TcpSocket&);
+	void DataDealWB(TcpSocket&);
+	void DataDealNB(TcpSocket&);
     long long timeConvert(unsigned long long);
 }
 

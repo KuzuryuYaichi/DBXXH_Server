@@ -6,7 +6,7 @@
 #include "DataThread.h"
 #include "PrintHelper.h"
 
-extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataWB_Data>>> tsqueueCXs;
+extern DBXXH::threadsafe_queue<std::unique_ptr<Struct_Datas<DataWB_Data>>> tsqueueWBs;
 
 void DBXXH::TcpSocket::WBDataReplay(const ParamPowerWB& ReplayParm, const std::unique_ptr<StructNetData>& res, size_t Datalen, unsigned short PackNum)
 {
@@ -66,11 +66,12 @@ long long DBXXH::timeConvert(unsigned long long t)
     return UnixTimeToFileTime(std::mktime(&tTime));
 }
 
-void DBXXH::DataDealCX(TcpSocket& socket)
+void DBXXH::DataDealWB(TcpSocket& socket)
 {
     auto ToPowerWB = [&](const DataWB_Data& recvData)
     {
         auto& ParamPowerWB = g_Parameter.m_ParamPowerWB;
+        ParamPowerWB.RefStatus = recvData.Params.WBParams.RefStatus;
         const auto PerDataLen = sizeof(char) * ParamPowerWB.DataPoint,
             Datalen = sizeof(DataHead) + sizeof(ParamPowerWB) + PerDataLen + sizeof(DataEnd);
         auto CXGroupNum = std::pow(2, 0x0E - ParamPowerWB.Resolution);
@@ -82,7 +83,7 @@ void DBXXH::DataDealCX(TcpSocket& socket)
             auto Range = res->data + sizeof(DataHead) + sizeof(ParamPowerWB);
             for (int p = 0; p < LENGTH; ++p)
             {
-                Range[p] = std::max(Data[p] / 10 + 68 - 14 + recvData.Params.WBParams.GainVal, 0);
+                Range[p] = std::max(Data[p] / 10 + 68 - 19 + recvData.Params.WBParams.RfGainVal - recvData.Params.WBParams.DigitGainVal, 0);
             }
             Range[LENGTH] = Range[LENGTH - 1];
             socket.WBDataReplay(ParamPowerWB, res, Datalen, 0);
@@ -104,7 +105,7 @@ void DBXXH::DataDealCX(TcpSocket& socket)
 
     while (true)
     {
-        auto ptr = tsqueueCXs.wait_and_pop();
+        auto ptr = tsqueueWBs.wait_and_pop();
         for (int i = 0; i < ptr->PACK_NUM; ++i)
         {
             if (ptr->ptr[i].Params.Head == 0xABCD1234)

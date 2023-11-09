@@ -62,6 +62,7 @@ namespace DBXXH
         int DataPoint = DataWB_Data::LENGTH + 1; // FFT点数 	INT32	4		FFT长度
         int SamplePoint; // 数据样点数 	INT32	4		FFT处理的数据样点数
         short Window; // 窗函数类型 	INT16	2		见B.26
+        short RefStatus;
         long long StartFreq = 0; // 起始频率	INT64	8	Hz
         long long StopFreq = 30000000; // 终止频率	INT64	8	Hz
         int ChannelNum; // 信道总数	INT32	4		由频率分辨率决定的数字信道化的信道数量，信道总数 = （终止频率 - 起始频率） / 频率分辨率 + 1

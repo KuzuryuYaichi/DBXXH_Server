@@ -204,12 +204,8 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
     {
     case 0x0101:
     {
-        if (Cmd[2].find_first_of("Scheck:") == 0)
-        {
-            ControlReplay(TaskValue, 1, 0);
-            std::cout << "Type: SelfCheck, Val: Dev State SelfCheck, State: SelfChecking" << std::endl;
-            SelfCheck();
-        }
+        ControlReplay(TaskValue, 1, 0);
+        SelfCheck();
         break;
     }
     case 0x0102:
@@ -278,10 +274,10 @@ void DBXXH::TcpSession::RecvCommandFun(const std::unique_ptr<Order>& buffer)
 
 void DBXXH::TcpSession::SelfCheck()
 {
-    StructCmdWB CmdWB;
-    CmdWB.Type = 1;
-    CmdWB.SelfCheck.Ctrl = 0xAAAA;
-    std::memset(CmdWB.SelfCheck.Reserved, 0, sizeof(CmdWB.SelfCheck.Reserved));
+    StructCmdWB Cmd_DDC(0x26F1);
+    std::cout << "Selfcheck: " << std::endl;
+    Cmd_DDC.Rf_Param.Type = 3;
+    Cmd_DDC.SendCXCmd();
 }
 
 void DBXXH::TcpSession::SetCmdWBParams(const std::vector<std::string>& Cmds)
@@ -508,6 +504,12 @@ void DBXXH::TcpSession::SetCmdNBChannel(const std::vector<std::string>& Cmds)
                 auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
                 auto PSK_Rate = std::stoul(Cmd.substr(sizeof("PSK")));
                 Cmd_PSK.PSK_Params.PSK_Rate = 3 * 1e6 / (PSK_Rate * NB_Param.CIC);
+            }
+            else if (ParamName == "FM_Truncate")
+            {
+                auto& NB_Param = g_Parameter.NB_Params.NB_Param[g_Parameter.NB_Params.BankNum];
+                auto Truncate = std::stoi(Cmd.substr(sizeof("FM_Truncate")));
+                Cmd_DDC.DDC_Param.ButterFly = Truncate;
             }
         }
     }

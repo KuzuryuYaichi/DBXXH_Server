@@ -59,10 +59,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="DataThreadCX.cpp">
+    <ClCompile Include="DataThreadWB.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DataThreadZC.cpp">
+    <ClCompile Include="DataThreadNB.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="dllImport.cpp">
